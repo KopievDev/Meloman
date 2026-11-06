@@ -1,14 +1,14 @@
 included:
-  - App
-  - Modules
-  - Tests
-  - Project.swift
-  - Tuist.swift
+  - ../App
+  - ../Modules
+  - ../Tests
+  - ../Project.swift
+  - ../Tuist.swift
 
 excluded:
-  - .build
-  - DerivedData
-  - Tuist/Dependencies
+  - ../.build
+  - ../DerivedData
+  - ../Tuist/Dependencies
 
 line_length:
   warning: 120
