@@ -1,0 +1,23 @@
+# Generated Tuist/Xcode artifacts
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+.build/
+Tuist/Dependencies/
+Tuist/.build/
+.tuist-cache/
+.swiftpm/
+
+# Local macOS/Xcode files
+.DS_Store
+*.xcuserstate
+xcuserdata/
+*.hmap
+*.ipa
+*.dSYM/
+*.dmg
+
+# Local projects/media and AI data (never commit user songs)
+*.meloman/
+Models/
+Derived/
