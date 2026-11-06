@@ -5,6 +5,10 @@ included:
   - ../Project.swift
   - ../Tuist.swift
 
+# SwiftFormat manages trailing commas and intentionally keeps them.
+disabled_rules:
+  - trailing_comma
+
 excluded:
   - ../.build
   - ../DerivedData
