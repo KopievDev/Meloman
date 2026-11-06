@@ -11,9 +11,9 @@ final class WorkspaceViewController: NSViewController {
         let workspace = makeWorkspace()
         let timeline = makeTimeline()
 
-        [toolbar, workspace, timeline].forEach {
-            $0.translatesAutoresizingMaskIntoConstraints = false
-            root.addSubview($0)
+        for child in [toolbar, workspace, timeline] {
+            child.translatesAutoresizingMaskIntoConstraints = false
+            root.addSubview(child)
         }
 
         NSLayoutConstraint.activate([
@@ -55,9 +55,9 @@ final class WorkspaceViewController: NSViewController {
         let actions = NSStackView(views: [importButton, karaokeButton, exportButton])
         actions.spacing = 10
 
-        [titleGroup, actions].forEach {
-            $0.translatesAutoresizingMaskIntoConstraints = false
-            bar.addSubview($0)
+        for child in [titleGroup, actions] {
+            child.translatesAutoresizingMaskIntoConstraints = false
+            bar.addSubview(child)
         }
 
         NSLayoutConstraint.activate([
@@ -125,9 +125,9 @@ final class WorkspaceViewController: NSViewController {
         placeholder.orientation = .vertical
         placeholder.spacing = 1
 
-        [heading, placeholder].forEach {
-            $0.translatesAutoresizingMaskIntoConstraints = false
-            panel.addSubview($0)
+        for child in [heading, placeholder] {
+            child.translatesAutoresizingMaskIntoConstraints = false
+            panel.addSubview(child)
         }
 
         NSLayoutConstraint.activate([
@@ -169,9 +169,9 @@ final class WorkspaceViewController: NSViewController {
         hint.maximumNumberOfLines = 0
         hint.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        [heading, hint].forEach {
-            $0.translatesAutoresizingMaskIntoConstraints = false
-            panel.addSubview($0)
+        for child in [heading, hint] {
+            child.translatesAutoresizingMaskIntoConstraints = false
+            panel.addSubview(child)
         }
 
         NSLayoutConstraint.activate([
