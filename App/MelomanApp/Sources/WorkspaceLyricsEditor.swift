@@ -28,12 +28,14 @@ extension WorkspaceViewController {
         scroll.hasVerticalScroller = true
         let textView = NSTextView(frame: scroll.bounds)
         textView.isRichText = false
+        textView.allowsUndo = true
         textView.font = .systemFont(ofSize: 14)
         textView.string = old
             .map { $0.words.map(\.text).joined(separator: " ") }
             .joined(separator: "\n")
         scroll.documentView = textView
         alert.accessoryView = scroll
+        alert.window.initialFirstResponder = textView
 
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         if !old.isEmpty {
