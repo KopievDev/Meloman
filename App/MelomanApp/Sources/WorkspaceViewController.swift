@@ -17,6 +17,14 @@ final class WorkspaceViewController: NSViewController {
     let speechRecognizer = WhisperSpeechRecognizer()
     let recognizeButton = NSButton(title: "AI текст", target: nil, action: nil)
     private var didStartModel = false
+    let aiProgressPanel = NSView()
+    let aiProgressTitle = NSTextField(labelWithString: "")
+    let aiProgressDetail = NSTextField(labelWithString: "")
+    let aiElapsedLabel = NSTextField(labelWithString: "")
+    let aiProgressBar = NSProgressIndicator()
+    let aiSpinner = NSProgressIndicator()
+    var aiProgressStartedAt: Date?
+    var aiProgressTimer: Timer?
     let player = AVPlayer()
     let lyricStrip = KaraokeTimelineStrip()
     let karaokeButton = NSButton(title: "Текст песни", target: nil, action: nil)
@@ -93,14 +101,18 @@ final class WorkspaceViewController: NSViewController {
         view.window?.title = "Meloman — \(project.name)"
         if !didStartModel {
             didStartModel = true
-            speechRecognizer.onStatus = { [weak self] message in
-                self?.statusLabel.stringValue = message
+            speechRecognizer.onProgress = { [weak self] update in
+                self?.displayModelProgress(update)
             }
             Task { [weak self] in
                 do {
                     try await self?.speechRecognizer.prepare()
                 } catch {
-                    self?.statusLabel.stringValue = "AI: ошибка модели — \(error.localizedDescription)"
+                    self?.displayAIProgress(
+                        title: "Ошибка подготовки AI",
+                        detail: error.localizedDescription,
+                        active: false
+                    )
                 }
             }
         }

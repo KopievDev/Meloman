@@ -25,7 +25,10 @@ extension WorkspaceViewController {
 
         isBusy = true
         setBusyControls()
-        statusLabel.stringValue = "AI: подготовка аудиодорожки…"
+        displayAIProgress(
+            title: "Шаг 1/3 · Подготовка аудио",
+            detail: selected.kind == .video ? "Извлечение звука из видео" : "Аудиофайл готов"
+        )
 
         Task { @MainActor [weak self] in
             guard let self else { return }
@@ -46,15 +49,25 @@ extension WorkspaceViewController {
         do {
             let source = try await TranscriptionAudioPreparer().prepare(
                 source: mediaURL,
-                kind: asset.kind
+                kind: asset.kind,
+                onProgress: { [weak self] fraction in
+                    self?.displayAIProgress(
+                        title: "Шаг 1/3 · Подготовка аудио",
+                        detail: fraction.map { "Извлечено \(Int($0 * 100))% звуковой дорожки" }
+                            ?? "Извлечение звуковой дорожки из видео",
+                        fraction: fraction
+                    )
+                }
             )
             if asset.kind == .video {
                 temporaryAudio = source
             }
 
             let words = try await speechRecognizer.recognize(audioAt: source)
+            displayAIProgress(title: "Шаг 3/3 · Разметка караоке", detail: "Формирование строк и слов")
             let lines = RecognizedLyricsBuilder.lines(from: words, duration: asset.duration)
             guard !lines.isEmpty else {
+                displayAIProgress(title: "Нет распознанных слов", detail: "Проверьте файл", active: false)
                 showError("AI не обнаружил слов с корректными таймкодами. " +
                     "Попробуйте другой файл или ручную разметку.")
                 return
@@ -65,9 +78,15 @@ extension WorkspaceViewController {
                 selectedWordID = lines.first?.words.first?.id
                 refreshKaraoke()
             }
-            statusLabel.stringValue = "AI: \(words.count) слов распознано. Проверьте текст и сохраните проект."
+            displayAIProgress(
+                title: "Готово — \(words.count) слов",
+                detail: "Проверьте таймкоды и сохраните проект",
+                active: false
+            )
+            statusLabel.stringValue = "AI: разметка создана"
         } catch {
             statusLabel.stringValue = "AI: ошибка распознавания"
+            displayAIProgress(title: "Ошибка распознавания", detail: error.localizedDescription, active: false)
             showError(error.localizedDescription)
         }
     }

@@ -52,7 +52,8 @@ extension WorkspaceViewController {
         }
         wordScroll.documentView = lyricStrip
 
-        for child in [heading, timelineInfo, tracks, wordScroll, statusLabel] {
+        let progressPanel = makeAIProgressPanel()
+        for child in [heading, timelineInfo, tracks, wordScroll, statusLabel, progressPanel] {
             child.translatesAutoresizingMaskIntoConstraints = false
             panel.addSubview(child)
         }
@@ -69,8 +70,13 @@ extension WorkspaceViewController {
             wordScroll.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -18),
             wordScroll.centerYAnchor.constraint(equalTo: tracks.arrangedSubviews[1].centerYAnchor),
             wordScroll.heightAnchor.constraint(equalToConstant: 40),
-            statusLabel.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -18),
+            statusLabel.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 18),
+            statusLabel.trailingAnchor.constraint(lessThanOrEqualTo: progressPanel.leadingAnchor, constant: -12),
             statusLabel.bottomAnchor.constraint(equalTo: panel.bottomAnchor, constant: -14),
+            progressPanel.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -18),
+            progressPanel.bottomAnchor.constraint(equalTo: panel.bottomAnchor, constant: -5),
+            progressPanel.widthAnchor.constraint(equalToConstant: 390),
+            progressPanel.heightAnchor.constraint(equalToConstant: 65),
         ])
 
         return panel
