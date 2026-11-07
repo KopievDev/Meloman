@@ -4,7 +4,10 @@ import Foundation
 /// The model is optional: it is downloaded on first use, not every app launch.
 @MainActor
 struct SpleeterModelInstaller {
-    private let url = URL(string: "https://github.com/jiyimeta/swift-spleeter/releases/download/0.2.0/Spleeter2Model.mlmodelc.zip")!
+    private let url = URL(
+        string: "https://github.com/jiyimeta/swift-spleeter/releases/download/0.2.0/" +
+            "Spleeter2Model.mlmodelc.zip"
+    )!
 
     func prepare(onProgress: @escaping @MainActor (AIProcessingUpdate) -> Void) async throws -> URL {
         let root = try FileManager.default.url(
