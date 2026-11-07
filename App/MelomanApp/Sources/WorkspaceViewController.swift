@@ -1,9 +1,38 @@
 import AppKit
+import AVFoundation
+import MediaPipeline
+import MelomanDomain
+import ProjectStore
 
 @MainActor
 final class WorkspaceViewController: NSViewController {
+    var project = MelomanProject(name: "Новый проект")
+    var projectURL: URL?
+    var mediaURLs: [UUID: URL] = [:]
+    var selectedMediaID: UUID?
+    var isBusy = false
+
+    let mediaImporter = MediaImporter()
+    let player = AVPlayer()
+    let mediaStack = NSStackView()
+    let preview = MediaPreviewView()
+    let previewHint = NSTextField(labelWithString: "Импортируйте аудио или видео")
+    let inspectorInfo = NSTextField(labelWithString: "Выберите файл в медиатеке")
+    let timeLabel = NSTextField(labelWithString: "00:00 / 00:00")
+    let timelineInfo = NSTextField(labelWithString: "Добавьте аудио или видео для начала")
+    let statusLabel = NSTextField(labelWithString: "Готово")
+    let seekSlider = NSSlider(value: 0, minValue: 0, maxValue: 1, target: nil, action: nil)
+    let playButton = NSButton(title: "▶", target: nil, action: nil)
+    let importButton = NSButton(title: "Импорт", target: nil, action: nil)
+    let openButton = NSButton(title: "Открыть проект", target: nil, action: nil)
+    let saveButton = NSButton(title: "Сохранить", target: nil, action: nil)
+    var timeObserver: Any?
+
     override func loadView() {
-        let root = NSView()
+        let root = MediaDropView()
+        root.onFilesDropped = { [weak self] urls in
+            self?.addMedia(urls)
+        }
         root.wantsLayer = true
         root.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
 
@@ -20,7 +49,7 @@ final class WorkspaceViewController: NSViewController {
             toolbar.topAnchor.constraint(equalTo: root.topAnchor),
             toolbar.leadingAnchor.constraint(equalTo: root.leadingAnchor),
             toolbar.trailingAnchor.constraint(equalTo: root.trailingAnchor),
-            toolbar.heightAnchor.constraint(equalToConstant: 70),
+            toolbar.heightAnchor.constraint(equalToConstant: 76),
 
             workspace.topAnchor.constraint(equalTo: toolbar.bottomAnchor),
             workspace.leadingAnchor.constraint(equalTo: root.leadingAnchor),
@@ -30,10 +59,29 @@ final class WorkspaceViewController: NSViewController {
             timeline.leadingAnchor.constraint(equalTo: root.leadingAnchor),
             timeline.trailingAnchor.constraint(equalTo: root.trailingAnchor),
             timeline.bottomAnchor.constraint(equalTo: root.bottomAnchor),
-            timeline.heightAnchor.constraint(equalToConstant: 220),
+            timeline.heightAnchor.constraint(equalToConstant: 215),
         ])
 
+        preview.playerLayer.player = player
         view = root
+        refreshMediaList()
+        updatePlaybackUI()
+    }
+
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        view.window?.title = "Meloman — \(project.name)"
+
+        if timeObserver == nil {
+            timeObserver = player.addPeriodicTimeObserver(
+                forInterval: CMTime(seconds: 0.15, preferredTimescale: 600),
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.updatePlaybackUI()
+                }
+            }
+        }
     }
 
     private func makeToolbar() -> NSView {
@@ -41,164 +89,225 @@ final class WorkspaceViewController: NSViewController {
         bar.wantsLayer = true
         bar.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
 
-        let title = label("Meloman", size: 23, weight: .bold)
+        let title = label("Meloman", size: 22, weight: .bold)
         let subtitle = label("Караоке-видео редактор", size: 12, color: .secondaryLabelColor)
-        let titleGroup = NSStackView(views: [title, subtitle])
-        titleGroup.orientation = .vertical
-        titleGroup.alignment = .leading
-        titleGroup.spacing = 3
+        let identity = NSStackView(views: [title, subtitle])
+        identity.orientation = .vertical
+        identity.alignment = .leading
+        identity.spacing = 3
 
-        let importButton = unavailableButton("Импорт", reason: "Импорт медиа появится в PR #2")
-        let karaokeButton = unavailableButton("Караоке", reason: "Генерация караоке появится позднее")
-        let exportButton = unavailableButton("Экспорт", reason: "Экспорт MP4 появится позднее")
+        importButton.target = self
+        importButton.action = #selector(importMedia(_:))
+        openButton.target = self
+        openButton.action = #selector(openProject(_:))
+        saveButton.target = self
+        saveButton.action = #selector(saveProject(_:))
 
-        let actions = NSStackView(views: [importButton, karaokeButton, exportButton])
-        actions.spacing = 10
+        let karaoke = NSButton(title: "Караоке", target: nil, action: nil)
+        karaoke.isEnabled = false
+        karaoke.toolTip = "Генерация караоке появится в PR #3"
+        let export = NSButton(title: "Экспорт", target: nil, action: nil)
+        export.isEnabled = false
+        export.toolTip = "Экспорт MP4 появится позднее"
 
-        for child in [titleGroup, actions] {
+        let buttons = NSStackView(views: [importButton, openButton, saveButton, karaoke, export])
+        buttons.spacing = 8
+
+        for child in [identity, buttons] {
             child.translatesAutoresizingMaskIntoConstraints = false
             bar.addSubview(child)
         }
 
         NSLayoutConstraint.activate([
-            titleGroup.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 24),
-            titleGroup.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
-            actions.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -24),
-            actions.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
-            titleGroup.trailingAnchor.constraint(lessThanOrEqualTo: actions.leadingAnchor, constant: -20),
+            identity.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 22),
+            identity.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
+            buttons.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -20),
+            buttons.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
+            identity.trailingAnchor.constraint(lessThanOrEqualTo: buttons.leadingAnchor, constant: -16),
         ])
 
         return bar
     }
 
     private func makeWorkspace() -> NSView {
-        let library = makePanel(
-            title: "МЕДИАТЕКА",
-            description: "Здесь появятся ваши аудио, видео, изображения и GIF."
-        )
-        let inspector = makePanel(
-            title: "ИНСПЕКТОР",
-            description: "Здесь можно будет редактировать слова, тайминги, стили и аудио."
-        )
+        let library = makeLibrary()
+        let inspector = makeInspector()
+        let center = makePreview()
 
-        let preview = NSView()
-        preview.wantsLayer = true
-        preview.layer?.backgroundColor = NSColor.black.cgColor
-
-        let headline = label("Предпросмотр караоке", size: 22, weight: .semibold, color: .white)
-        let hint = label("Импортируйте аудио или видеоклип, чтобы начать", size: 13, color: .lightGray)
-        let previewText = NSStackView(views: [headline, hint])
-        previewText.orientation = .vertical
-        previewText.alignment = .centerX
-        previewText.spacing = 12
-        previewText.translatesAutoresizingMaskIntoConstraints = false
-        preview.addSubview(previewText)
-
-        NSLayoutConstraint.activate([
-            previewText.centerXAnchor.constraint(equalTo: preview.centerXAnchor),
-            previewText.centerYAnchor.constraint(equalTo: preview.centerYAnchor),
-        ])
-
-        let columns = NSStackView(views: [library, preview, inspector])
+        let columns = NSStackView(views: [library, center, inspector])
         columns.orientation = .horizontal
         columns.distribution = .fill
         columns.spacing = 1
 
         library.widthAnchor.constraint(equalToConstant: 220).isActive = true
-        inspector.widthAnchor.constraint(equalToConstant: 260).isActive = true
-        preview.widthAnchor.constraint(greaterThanOrEqualToConstant: 240).isActive = true
+        inspector.widthAnchor.constraint(equalToConstant: 240).isActive = true
+        center.widthAnchor.constraint(greaterThanOrEqualToConstant: 250).isActive = true
 
         return columns
     }
 
+    private func makeLibrary() -> NSView {
+        let panel = makePanel()
+        let title = label("МЕДИАТЕКА", size: 11, weight: .semibold, color: .secondaryLabelColor)
+        let scroll = NSScrollView()
+        scroll.hasVerticalScroller = true
+        scroll.drawsBackground = false
+        mediaStack.orientation = .vertical
+        mediaStack.alignment = .leading
+        mediaStack.spacing = 7
+        mediaStack.edgeInsets = NSEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
+        scroll.documentView = mediaStack
+
+        for child in [title, scroll] {
+            child.translatesAutoresizingMaskIntoConstraints = false
+            panel.addSubview(child)
+        }
+
+        NSLayoutConstraint.activate([
+            title.topAnchor.constraint(equalTo: panel.topAnchor, constant: 18),
+            title.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 16),
+            scroll.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 13),
+            scroll.leadingAnchor.constraint(equalTo: panel.leadingAnchor),
+            scroll.trailingAnchor.constraint(equalTo: panel.trailingAnchor),
+            scroll.bottomAnchor.constraint(equalTo: panel.bottomAnchor),
+        ])
+
+        return panel
+    }
+
+    private func makePreview() -> NSView {
+        let center = NSView()
+        let controls = NSView()
+        controls.wantsLayer = true
+        controls.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
+
+        previewHint.textColor = .lightGray
+        previewHint.font = .systemFont(ofSize: 17, weight: .medium)
+        previewHint.maximumNumberOfLines = 2
+        previewHint.lineBreakMode = .byTruncatingMiddle
+        preview.addSubview(previewHint)
+        previewHint.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            previewHint.centerXAnchor.constraint(equalTo: preview.centerXAnchor),
+            previewHint.centerYAnchor.constraint(equalTo: preview.centerYAnchor),
+            previewHint.widthAnchor.constraint(lessThanOrEqualTo: preview.widthAnchor, constant: -36),
+        ])
+
+        playButton.target = self
+        playButton.action = #selector(togglePlayback(_:))
+        playButton.isEnabled = false
+        seekSlider.target = self
+        seekSlider.action = #selector(seek(_:))
+        seekSlider.isEnabled = false
+        timeLabel.textColor = .secondaryLabelColor
+        timeLabel.font = .monospacedDigitSystemFont(ofSize: 11, weight: .regular)
+
+        for child in [playButton, seekSlider, timeLabel] {
+            child.translatesAutoresizingMaskIntoConstraints = false
+            controls.addSubview(child)
+        }
+
+        NSLayoutConstraint.activate([
+            playButton.leadingAnchor.constraint(equalTo: controls.leadingAnchor, constant: 12),
+            playButton.centerYAnchor.constraint(equalTo: controls.centerYAnchor),
+            seekSlider.leadingAnchor.constraint(equalTo: playButton.trailingAnchor, constant: 10),
+            seekSlider.centerYAnchor.constraint(equalTo: controls.centerYAnchor),
+            timeLabel.leadingAnchor.constraint(equalTo: seekSlider.trailingAnchor, constant: 12),
+            timeLabel.centerYAnchor.constraint(equalTo: controls.centerYAnchor),
+            timeLabel.trailingAnchor.constraint(equalTo: controls.trailingAnchor, constant: -12),
+            timeLabel.widthAnchor.constraint(equalToConstant: 105),
+        ])
+
+        for child in [preview, controls] {
+            child.translatesAutoresizingMaskIntoConstraints = false
+            center.addSubview(child)
+        }
+
+        NSLayoutConstraint.activate([
+            preview.topAnchor.constraint(equalTo: center.topAnchor),
+            preview.leadingAnchor.constraint(equalTo: center.leadingAnchor),
+            preview.trailingAnchor.constraint(equalTo: center.trailingAnchor),
+            controls.topAnchor.constraint(equalTo: preview.bottomAnchor),
+            controls.leadingAnchor.constraint(equalTo: center.leadingAnchor),
+            controls.trailingAnchor.constraint(equalTo: center.trailingAnchor),
+            controls.bottomAnchor.constraint(equalTo: center.bottomAnchor),
+            controls.heightAnchor.constraint(equalToConstant: 52),
+        ])
+
+        return center
+    }
+
+    private func makeInspector() -> NSView {
+        let panel = makePanel()
+        let title = label("ИНСПЕКТОР", size: 11, weight: .semibold, color: .secondaryLabelColor)
+        inspectorInfo.textColor = .secondaryLabelColor
+        inspectorInfo.maximumNumberOfLines = 0
+        inspectorInfo.lineBreakMode = .byWordWrapping
+
+        for child in [title, inspectorInfo] {
+            child.translatesAutoresizingMaskIntoConstraints = false
+            panel.addSubview(child)
+        }
+
+        NSLayoutConstraint.activate([
+            title.topAnchor.constraint(equalTo: panel.topAnchor, constant: 18),
+            title.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 17),
+            inspectorInfo.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 18),
+            inspectorInfo.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 17),
+            inspectorInfo.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -17),
+        ])
+
+        return panel
+    }
+
     private func makeTimeline() -> NSView {
-        let panel = NSView()
-        panel.wantsLayer = true
-        panel.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
-
+        let panel = makePanel()
         let heading = label("ТАЙМЛАЙН", size: 11, weight: .semibold, color: .secondaryLabelColor)
-        let placeholder = NSStackView(views: [
-            timelineTrack("V1   Видео"),
-            timelineTrack("K1   Караоке"),
-            timelineTrack("A1   Аудио"),
+        timelineInfo.textColor = .secondaryLabelColor
+        let tracks = NSStackView(views: [
+            label("V1   Видео", size: 12, color: .secondaryLabelColor),
+            label("K1   Караоке", size: 12, color: .secondaryLabelColor),
+            label("A1   Аудио", size: 12, color: .secondaryLabelColor),
         ])
-        placeholder.orientation = .vertical
-        placeholder.spacing = 1
+        tracks.orientation = .vertical
+        tracks.alignment = .leading
+        tracks.spacing = 20
 
-        for child in [heading, placeholder] {
+        for child in [heading, timelineInfo, tracks, statusLabel] {
             child.translatesAutoresizingMaskIntoConstraints = false
             panel.addSubview(child)
         }
 
+        statusLabel.textColor = .secondaryLabelColor
         NSLayoutConstraint.activate([
-            heading.topAnchor.constraint(equalTo: panel.topAnchor, constant: 17),
-            heading.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 22),
-            placeholder.topAnchor.constraint(equalTo: heading.bottomAnchor, constant: 16),
-            placeholder.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 12),
-            placeholder.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -12),
+            heading.topAnchor.constraint(equalTo: panel.topAnchor, constant: 14),
+            heading.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 18),
+            timelineInfo.centerYAnchor.constraint(equalTo: heading.centerYAnchor),
+            timelineInfo.leadingAnchor.constraint(equalTo: heading.trailingAnchor, constant: 18),
+            tracks.topAnchor.constraint(equalTo: heading.bottomAnchor, constant: 25),
+            tracks.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 18),
+            statusLabel.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -18),
+            statusLabel.bottomAnchor.constraint(equalTo: panel.bottomAnchor, constant: -14),
         ])
 
         return panel
     }
 
-    private func timelineTrack(_ text: String) -> NSView {
-        let track = NSView()
-        track.wantsLayer = true
-        track.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
-        let title = label(text, size: 12, color: .secondaryLabelColor)
-        title.translatesAutoresizingMaskIntoConstraints = false
-        track.addSubview(title)
-
-        NSLayoutConstraint.activate([
-            track.heightAnchor.constraint(equalToConstant: 42),
-            title.leadingAnchor.constraint(equalTo: track.leadingAnchor, constant: 12),
-            title.centerYAnchor.constraint(equalTo: track.centerYAnchor),
-        ])
-
-        return track
-    }
-
-    private func makePanel(title: String, description: String) -> NSView {
+    private func makePanel() -> NSView {
         let panel = NSView()
         panel.wantsLayer = true
         panel.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
-
-        let heading = label(title, size: 11, weight: .semibold, color: .secondaryLabelColor)
-        let hint = label(description, size: 12, color: .secondaryLabelColor)
-        hint.lineBreakMode = .byWordWrapping
-        hint.maximumNumberOfLines = 0
-        hint.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-
-        for child in [heading, hint] {
-            child.translatesAutoresizingMaskIntoConstraints = false
-            panel.addSubview(child)
-        }
-
-        NSLayoutConstraint.activate([
-            heading.topAnchor.constraint(equalTo: panel.topAnchor, constant: 20),
-            heading.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 18),
-            hint.topAnchor.constraint(equalTo: heading.bottomAnchor, constant: 20),
-            hint.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 18),
-            hint.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -18),
-        ])
-
         return panel
-    }
-
-    private func unavailableButton(_ title: String, reason: String) -> NSButton {
-        let button = NSButton(title: title, target: nil, action: nil)
-        button.isEnabled = false
-        button.toolTip = reason
-        return button
     }
 
     private func label(
-        _ text: String,
+        _ value: String,
         size: CGFloat,
         weight: NSFont.Weight = .regular,
         color: NSColor = .labelColor
     ) -> NSTextField {
-        let field = NSTextField(labelWithString: text)
+        let field = NSTextField(labelWithString: value)
         field.font = .systemFont(ofSize: size, weight: weight)
         field.textColor = color
         return field
