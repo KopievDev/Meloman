@@ -138,7 +138,7 @@ public final class MLXRoFormerSeparator {
         try process.run()
         let bytes = pipe.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
-        let message = String(decoding: bytes.suffix(3000), as: UTF8.self)
+        let message = String(bytes: bytes.suffix(3000), encoding: .utf8) ?? "Не удалось прочитать лог MLX"
         return (process.terminationStatus, message)
     }
 }
