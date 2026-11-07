@@ -67,19 +67,19 @@ extension WorkspaceViewController {
     func separateAudio(audioURL: URL, originalURL: URL) async throws -> VocalStems {
         switch separationQuality.indexOfSelectedItem {
         case 1:
-            return try await roFormerSeparator.separate(
+            try await roFormerSeparator.separate(
                 audioURL: audioURL,
                 originalURL: originalURL,
                 model: .zfTurbo
             )
         case 2:
-            return try await roFormerSeparator.separate(
+            try await roFormerSeparator.separate(
                 audioURL: audioURL,
                 originalURL: originalURL,
                 model: .bsRoFormer
             )
         default:
-            return try await vocalSeparator.separate(audioURL: audioURL, originalURL: originalURL)
+            try await vocalSeparator.separate(audioURL: audioURL, originalURL: originalURL)
         }
     }
 
