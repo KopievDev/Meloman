@@ -88,8 +88,8 @@ public final class WhisperSpeechRecognizer {
         }
 
         isDownloadingModel = true
-        recognizer.onProgress?(AIProcessingUpdate(
-                        title: "Загрузка модели Whisper small",
+        onProgress?(AIProcessingUpdate(
+            title: "Загрузка модели Whisper small",
             detail: "Скачивание на Mac, потребуется интернет"
         ))
         let folder = try await WhisperKit.download(
@@ -99,7 +99,7 @@ public final class WhisperSpeechRecognizer {
                 let fraction = progress.totalUnitCount > 0 ? progress.fractionCompleted : nil
                 Task { @MainActor [weak self] in
                     guard let recognizer = self, recognizer.isDownloadingModel else { return }
-                    onProgress?(AIProcessingUpdate(
+                    recognizer.onProgress?(AIProcessingUpdate(
                         title: "Загрузка модели Whisper small",
                         detail: fraction.map {
                             "Скачано \(Int(max(0, min(1, $0)) * 100))% модели"
