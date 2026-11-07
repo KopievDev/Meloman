@@ -69,6 +69,25 @@ Accurate offline *forced alignment* of known lyrics to an isolated vocal track
 is a separate upcoming milestone (candidate engines: stable-ts or a CTC aligner).
 Do not treat this basic ASR as the final karaoke transcription pipeline.
 
+## Keyboard shortcuts in the karaoke editor
+
+Meloman installs the native AppKit **Правка** menu and routes standard edit
+commands through the focused text editor. This restores Copy, Paste and Select All
+for the word field, start/end timing fields, and multiline lyrics dialog.
+
+- `Cmd+C`, `Cmd+X`, `Cmd+V`: copy, cut and paste selection
+- `Cmd+A`: select all in the focused text field
+- `Cmd+Z`, `Shift+Cmd+Z`: undo and redo text editing
+
+**Manual regression checklist:** focus the lyrics word field, paste Russian
+text, use Cmd+A and replace it; paste `12.345` into both timing fields.
+Next open **Текст песни** and paste several lines of lyrics including line
+breaks using Cmd+V. Check menu **Правка → Вставить** as well.
+
+**Note:** text editing Undo uses the native field editor; the karaoke
+inspector's **Отменить / Повторить** buttons remain responsible for
+previously applied word/timing changes in the project.
+
 ## Tests and quality checks
 
 Install the CLI tools once using `brew install swiftlint swiftformat`, then run:
