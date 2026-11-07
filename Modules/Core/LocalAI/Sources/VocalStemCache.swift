@@ -19,7 +19,7 @@ public enum VocalStemCache {
         }.value
     }
 
-    public static func directory(for key: String) throws -> URL {
+    public static func directory(for key: String, revision: String = modelRevision) throws -> URL {
         guard key.count == 64, key.allSatisfy(\.isHexDigit) else {
             throw CocoaError(.fileReadCorruptFile)
         }
@@ -31,7 +31,7 @@ public enum VocalStemCache {
         )
         let directory = root
             .appendingPathComponent("Meloman/Derived/Stems", isDirectory: true)
-            .appendingPathComponent(modelRevision, isDirectory: true)
+            .appendingPathComponent(revision, isDirectory: true)
             .appendingPathComponent(key, isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return directory

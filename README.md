@@ -4,7 +4,7 @@
 
 See the [MVP roadmap](docs/ROADMAP.md) for product scope and planned milestones.
 
-> **Status:** PR #5 adds native Core ML vocal/instrumental separation and a clean-vocal input option for Whisper. Forced lyrics alignment and MP4 export remain future milestones.
+> **Status:** PR #7 adds an optional high-quality MLX Mel-Band RoFormer separator alongside Spleeter, keeping clean-vocal AI and per-engine caches. Known-lyrics alignment and export remain future milestones.
 
 ## Requirements
 
@@ -27,12 +27,12 @@ Select the **Meloman** scheme and run the app. Use **Импорт** (or drop med
 
 ## Build a runnable macOS app
 
-From the `feature/005-vocal-separation` branch, run:
+From the `feature/006-mlx-roformer` branch, run:
 
 ```sh
 git fetch origin
-git switch --track origin/feature/005-vocal-separation
-git pull --ff-only origin feature/005-vocal-separation
+git switch --track origin/feature/006-mlx-roformer
+git pull --ff-only origin feature/006-mlx-roformer
 ./scripts/build.sh
 open dist/Meloman.app
 ```
@@ -113,6 +113,42 @@ only when processing completes; partial files are not treated as valid cache.
 Some bleed, phase artifacts and mangled consonants may remain. Separating stems
 does not magically provide correct Russian lyrics or forced alignment; compare
 manually on several clips. Karaoke MP4 export is **not** implemented yet.
+
+
+## High-quality separation on Apple Silicon (PR #7)
+
+Choose the engine under **Разделение вокала**:
+
+- **RoFormer MLX · качество** (default): Mel-Band RoFormer using MLX on
+  Apple Silicon. First install the pinned MLX runtime in a private venv:
+  `./scripts/setup-mlx.sh` from the repository root. This setup requires
+  Python 3.10–3.13 on an arm64 Mac; use Homebrew Python 3.12 if macOS's
+  `python3` is older. No Docker, server or system-wide pip installation.
+  On first use MLX downloads the model (~64 MB, plus MLX runtime dependencies)
+  and thereafter reuses it offline.
+- **Spleeter · быстрее**: existing native Core ML option (about 36 MB model),
+  usable without Python setup.
+
+Both options work with **Отделить вокал** and **AI текст** when
+**Чистый вокал для AI** is checked. Preview **Вокал / Минус / Оригинал**
+and compare results. The tracks are kept in **separate per-model caches**:
+switching engines does not silently reuse an older Spleeter result.
+The model selector is locked while processing.
+
+The RoFormer integration invokes `mlx-audio-separator==0.1.20` from
+`~/Library/Application Support/Meloman/Engines/MLX/bin/mlx-audio-separator`,
+using the catalog model `mel-roformer-zfturbo-vocals-v1-mlx`. The installer
+only creates an isolated runtime; the first model download is initiated by
+the **Отделить вокал** or **AI текст** action. No media is sent to a cloud
+inference service. Model files are downloaded from Hugging Face on first use.
+Progress uses an activity indicator during MLX inference because this CLI
+does not expose a reliable overall completion fraction. Failures preserve
+the original audio, and Spleeter remains available as a fallback.
+
+**Quality is not guaranteed:** the results depend on the song and stem quality.
+The high-quality mode is an experimental opt-in runtime in this MVP; before
+shipping a notarized public application, bundle or manage its runtime and
+review model-weight licenses, security and offline packaging.
 
 ## Tests and quality checks
 
