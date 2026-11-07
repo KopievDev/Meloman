@@ -134,7 +134,7 @@ public final class WhisperSpeechRecognizer {
                 let window = progress.windowId + 1
                 Task { @MainActor [weak self] in
                     guard let self, isRecognizing else { return }
-                    self.onProgress?(AIProcessingUpdate(
+                    onProgress?(AIProcessingUpdate(
                         title: "Распознавание песни",
                         detail: "Фрагмент \(window): обработано \(count) токенов (не слов)"
                     ))
