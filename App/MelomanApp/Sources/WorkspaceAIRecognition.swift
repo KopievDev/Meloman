@@ -68,7 +68,16 @@ extension WorkspaceViewController {
             case 2: "en"
             default: nil
             }
-            let words = try await speechRecognizer.recognize(audioAt: source, language: language)
+            let recognitionURL: URL
+            if useCleanVocals.state == .on {
+                let stems = try await vocalSeparator.separate(audioURL: source, originalURL: mediaURL)
+                stemsByMediaID[mediaID] = stems
+                recognitionURL = stems.vocals
+                updateStemButtons()
+            } else {
+                recognitionURL = source
+            }
+            let words = try await speechRecognizer.recognize(audioAt: recognitionURL, language: language)
             handleRecognizedWords(words, mediaID: mediaID, duration: asset.duration)
         } catch {
             statusLabel.stringValue = "AI: ошибка распознавания"

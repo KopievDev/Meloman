@@ -15,6 +15,13 @@ final class WorkspaceViewController: NSViewController {
 
     let mediaImporter = MediaImporter()
     let speechRecognizer = WhisperSpeechRecognizer()
+    let vocalSeparator = VocalSeparator()
+    var stemsByMediaID: [UUID: VocalStems] = [:]
+    let useCleanVocals = NSButton(checkboxWithTitle: "Чистый вокал для AI", target: nil, action: nil)
+    let separateButton = NSButton(title: "Отделить вокал", target: nil, action: nil)
+    let playVocalsButton = NSButton(title: "Вокал", target: nil, action: nil)
+    let playInstrumentalButton = NSButton(title: "Минус", target: nil, action: nil)
+    let playOriginalButton = NSButton(title: "Оригинал", target: nil, action: nil)
     let recognizeButton = NSButton(title: "AI текст", target: nil, action: nil)
     let recognitionLanguage = NSPopUpButton(frame: .zero, pullsDown: false)
     private var didStartModel = false
@@ -103,6 +110,9 @@ final class WorkspaceViewController: NSViewController {
         if !didStartModel {
             didStartModel = true
             speechRecognizer.onProgress = { [weak self] update in
+                self?.displayModelProgress(update)
+            }
+            vocalSeparator.onProgress = { [weak self] update in
                 self?.displayModelProgress(update)
             }
             Task { [weak self] in

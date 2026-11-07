@@ -4,7 +4,7 @@
 
 See the [MVP roadmap](docs/ROADMAP.md) for product scope and planned milestones.
 
-> **Status:** PR #4 adds local WhisperKit transcription with word timestamps. Vocal separation, forced lyrics alignment and MP4 export remain future milestones.
+> **Status:** PR #5 adds native Core ML vocal/instrumental separation and a clean-vocal input option for Whisper. Forced lyrics alignment and MP4 export remain future milestones.
 
 ## Requirements
 
@@ -27,12 +27,12 @@ Select the **Meloman** scheme and run the app. Use **Импорт** (or drop med
 
 ## Build a runnable macOS app
 
-From the `feature/004-local-asr` branch, run:
+From the `feature/005-vocal-separation` branch, run:
 
 ```sh
 git fetch origin
-git switch --track origin/feature/004-local-asr
-git pull --ff-only origin feature/004-local-asr
+git switch --track origin/feature/005-vocal-separation
+git pull --ff-only origin feature/005-vocal-separation
 ./scripts/build.sh
 open dist/Meloman.app
 ```
@@ -88,6 +88,32 @@ breaks using Cmd+V. Check menu **Правка → Вставить** as well.
 inspector's **Отменить / Повторить** buttons remain responsible for
 previously applied word/timing changes in the project.
 
+## AI vocal separation (PR #5)
+
+Meloman now supports **Отделить вокал** in the Inspector. The first use downloads
+a pinned two-stem **Spleeter Core ML model** (~36 MB) from the open-source
+[swift-spleeter release 0.2.0](https://github.com/jiyimeta/swift-spleeter/releases/tag/0.2.0).
+The model is cached in `~/Library/Application Support/Meloman/Models/`.
+This uses macOS Core ML and `afconvert`, without Docker, Python or a server.
+
+When **Чистый вокал для AI** is enabled (default), **AI текст** first creates
+two derived WAV tracks, then transcribes only the vocal track with WhisperKit.
+The original song and video remain intact; vocals and instrumental WAVs are
+cached by SHA-256 of the original media plus model version in Application Support.
+For comparison, uncheck the option and rerun `AI текст` on the original mix.
+`Отделить вокал` also creates the tracks without transcribing; use
+**Вокал**, **Минус**, **Оригинал** to audition the results. Audio-only preview
+temporarily replaces the video preview for stems; it does not edit the source.
+
+The separation progress reflects real processed chunks. Model download and WAV
+preparation show activity without inventing percentages. Both stems are written
+only when processing completes; partial files are not treated as valid cache.
+
+**Important limitations:** Spleeter is a lightweight baseline, not RoFormer.
+Some bleed, phase artifacts and mangled consonants may remain. Separating stems
+does not magically provide correct Russian lyrics or forced alignment; compare
+manually on several clips. Karaoke MP4 export is **not** implemented yet.
+
 ## Tests and quality checks
 
 Install the CLI tools once using `brew install swiftlint swiftformat`, then run:
@@ -107,7 +133,7 @@ Modules/Core/MelomanDomain/       Platform-agnostic project, karaoke and timelin
 Modules/Core/MediaPipeline/       AVFoundation-backed media metadata inspection
 Modules/Core/ProjectStore/        Versioned portable .meloman package persistence
 Modules/Core/KaraokeEngine/       Pure per-word timing, draft and word-fill state
-Modules/Core/LocalAI/             WhisperKit adapter, model loading and local recognition
+Modules/Core/LocalAI/             WhisperKit plus native Spleeter separation and local model cache
 Tests/KaraokeEngineTests/         Progress/seek/hidden/per-media lyric tests
 Tests/ProjectStoreTests/          Package persistence integration tests
 Tests/DomainTests/                Foundation/XCTest smoke and serialization tests
