@@ -23,6 +23,15 @@ final class VocalStemCacheTests: XCTestCase {
         XCTAssertNotEqual(changedHash, hash1)
     }
 
+    func testDifferentEngineRevisionsCannotShareStems() throws {
+        let digest = String(repeating: "a", count: 64)
+        let spleeter = try VocalStemCache.directory(for: digest)
+        let mlx = try VocalStemCache.directory(for: digest, revision: MLXRoFormerSeparator.modelRevision)
+        XCTAssertNotEqual(spleeter, mlx)
+        XCTAssertTrue(spleeter.path.contains("spleeter2-coreml-0.2.0"))
+        XCTAssertTrue(mlx.path.contains("mlx-roformer-zfturbo-v1-0.1.20"))
+    }
+
     func testAbsentStemIsNeverAcceptedAsCacheHit() {
         let missing = FileManager.default.temporaryDirectory
             .appendingPathComponent("not-present-\(UUID().uuidString).wav")

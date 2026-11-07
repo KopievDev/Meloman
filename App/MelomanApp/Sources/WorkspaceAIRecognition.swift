@@ -70,7 +70,7 @@ extension WorkspaceViewController {
             }
             let recognitionURL: URL
             if useCleanVocals.state == .on {
-                let stems = try await vocalSeparator.separate(audioURL: source, originalURL: mediaURL)
+                let stems = try await separateAudio(audioURL: source, originalURL: mediaURL)
                 stemsByMediaID[mediaID] = stems
                 recognitionURL = stems.vocals
                 updateStemButtons()

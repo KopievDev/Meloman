@@ -9,7 +9,15 @@ extension WorkspaceViewController {
     func makeVocalControls() -> NSView {
         let title = label("РАЗДЕЛЕНИЕ ВОКАЛА", size: 11, weight: .semibold, color: .secondaryLabelColor)
         useCleanVocals.state = .on
-        useCleanVocals.toolTip = "При распознавании сначала отделять голос нейросетью Core ML"
+        useCleanVocals.toolTip = "При распознавании отделять вокал выбранной моделью"
+        separationQuality.addItems(withTitles: ["Spleeter · быстрее", "RoFormer MLX · качество"])
+        let executable = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Application Support/Meloman/Engines/MLX/bin/mlx-audio-separator")
+        separationQuality.selectItem(
+            at: FileManager.default.isExecutableFile(atPath: executable.path) ? 1 : 0
+        )
+        separationQuality.target = self
+        separationQuality.action = #selector(separationModelChanged(_:))
 
         separateButton.target = self
         separateButton.action = #selector(separateCurrentVocals(_:))
@@ -23,11 +31,11 @@ extension WorkspaceViewController {
         let playback = NSStackView(views: [playVocalsButton, playInstrumentalButton, playOriginalButton])
         playback.distribution = .fillEqually
         playback.spacing = 3
-        let stack = NSStackView(views: [title, useCleanVocals, separateButton, playback])
+        let stack = NSStackView(views: [title, separationQuality, useCleanVocals, separateButton, playback])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 7
-        for view in [separateButton, playback] {
+        for view in [separationQuality, separateButton, playback] {
             view.translatesAutoresizingMaskIntoConstraints = false
             view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         }
@@ -42,6 +50,21 @@ extension WorkspaceViewController {
         playInstrumentalButton.isEnabled = available
         playOriginalButton.isEnabled = !isBusy && selectedMediaID != nil
         useCleanVocals.isEnabled = !isBusy
+        separationQuality.isEnabled = !isBusy
+    }
+
+    @objc func separationModelChanged(_: Any?) {
+        guard let id = selectedMediaID else { return }
+        stemsByMediaID.removeAll()
+        loadSelectedMedia()
+        updateStemButtons()
+    }
+
+    func separateAudio(audioURL: URL, originalURL: URL) async throws -> VocalStems {
+        if separationQuality.indexOfSelectedItem == 1 {
+            return try await roFormerSeparator.separate(audioURL: audioURL, originalURL: originalURL)
+        }
+        return try await vocalSeparator.separate(audioURL: audioURL, originalURL: originalURL)
     }
 
     @objc func separateCurrentVocals(_: Any?) {
@@ -81,7 +104,7 @@ extension WorkspaceViewController {
                 if asset.kind == .video {
                     temporary = input
                 }
-                let stems = try await vocalSeparator.separate(audioURL: input, originalURL: url)
+                let stems = try await separateAudio(audioURL: input, originalURL: url)
                 stemsByMediaID[id] = stems
                 statusLabel.stringValue = stems.wasCached
                     ? "Дорожки найдены в кеше" : "Вокал и минусовка готовы"
