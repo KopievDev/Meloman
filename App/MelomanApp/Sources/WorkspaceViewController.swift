@@ -1,6 +1,7 @@
 import AppKit
 import AVFoundation
 import MediaPipeline
+import LocalAI
 import MelomanDomain
 import ProjectStore
 
@@ -13,6 +14,9 @@ final class WorkspaceViewController: NSViewController {
     var isBusy = false
 
     let mediaImporter = MediaImporter()
+    let speechRecognizer = WhisperSpeechRecognizer()
+    let recognizeButton = NSButton(title: "AI текст", target: nil, action: nil)
+    private var didStartModel = false
     let player = AVPlayer()
     let lyricStrip = KaraokeTimelineStrip()
     let karaokeButton = NSButton(title: "Текст песни", target: nil, action: nil)
@@ -87,6 +91,19 @@ final class WorkspaceViewController: NSViewController {
     override func viewDidAppear() {
         super.viewDidAppear()
         view.window?.title = "Meloman — \(project.name)"
+        if !didStartModel {
+            didStartModel = true
+            speechRecognizer.onStatus = { [weak self] message in
+                self?.statusLabel.stringValue = message
+            }
+            Task { [weak self] in
+                do {
+                    try await self?.speechRecognizer.prepare()
+                } catch {
+                    self?.statusLabel.stringValue = "AI: ошибка модели — \(error.localizedDescription)"
+                }
+            }
+        }
 
         if timeObserver == nil {
             timeObserver = player.addPeriodicTimeObserver(

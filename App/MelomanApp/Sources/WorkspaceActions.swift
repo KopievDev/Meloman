@@ -179,6 +179,7 @@ extension WorkspaceViewController {
         openButton.isEnabled = !isBusy
         saveButton.isEnabled = !isBusy
         karaokeButton.isEnabled = !isBusy && selectedMediaID != nil
+        recognizeButton.isEnabled = !isBusy && selectedMediaID != nil
     }
 
     func showError(_ message: String) {
