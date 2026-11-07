@@ -5,6 +5,7 @@ let project = Project(
     organizationName: "KopievDev",
     packages: [
         .package(url: "https://github.com/argmaxinc/argmax-oss-swift.git", .exact("1.1.1")),
+        .package(url: "https://github.com/jiyimeta/swift-spleeter.git", .exact("0.2.0")),
     ],
     settings: .settings(
         base: [
@@ -70,6 +71,7 @@ let project = Project(
             dependencies: [
                 .target(name: "MelomanDomain"),
                 .package(product: "WhisperKit"),
+                .package(product: "Spleeter"),
             ]
         ),
         .target(
@@ -133,13 +135,25 @@ let project = Project(
                 .target(name: "KaraokeEngine"),
             ]
         ),
+        .target(
+            name: "LocalAITests",
+            destinations: .macOS,
+            product: .unitTests,
+            bundleId: "dev.kopiev.meloman.localai.tests",
+            deploymentTargets: .macOS("15.0"),
+            infoPlist: .default,
+            sources: ["Tests/LocalAITests/**"],
+            dependencies: [
+                .target(name: "LocalAI"),
+            ]
+        ),
     ],
     schemes: [
         .scheme(
             name: "Meloman",
             shared: true,
             buildAction: .buildAction(targets: ["Meloman"]),
-            testAction: .targets(["MelomanDomainTests", "ProjectStoreTests", "KaraokeEngineTests"]),
+            testAction: .targets(["MelomanDomainTests", "ProjectStoreTests", "KaraokeEngineTests", "LocalAITests"]),
             runAction: .runAction(executable: "Meloman")
         ),
     ]

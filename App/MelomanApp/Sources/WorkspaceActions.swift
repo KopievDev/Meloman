@@ -96,6 +96,7 @@ extension WorkspaceViewController {
             "Источник сохранится внутри проекта .meloman.",
         ].joined(separator: "\n")
         timelineInfo.stringValue = "Выбран: \(selected.name)"
+        updateStemButtons()
         refreshKaraoke()
         updatePlaybackUI()
     }
@@ -180,6 +181,7 @@ extension WorkspaceViewController {
         saveButton.isEnabled = !isBusy
         karaokeButton.isEnabled = !isBusy && selectedMediaID != nil
         recognizeButton.isEnabled = !isBusy && selectedMediaID != nil
+        updateStemButtons()
     }
 
     func showError(_ message: String) {

@@ -13,8 +13,9 @@ extension WorkspaceViewController {
         let languageTitle = label("ЯЗЫК РАСПОЗНАВАНИЯ", size: 11, color: .secondaryLabelColor)
         recognitionLanguage.addItems(withTitles: ["Авто", "Русский", "English"])
         recognitionLanguage.selectItem(at: 1)
+        let separation = makeVocalControls()
 
-        for child in [title, inspectorInfo, lyricsControls, languageTitle, recognitionLanguage] {
+        for child in [title, inspectorInfo, lyricsControls, languageTitle, recognitionLanguage, separation] {
             child.translatesAutoresizingMaskIntoConstraints = false
             panel.addSubview(child)
         }
@@ -33,6 +34,9 @@ extension WorkspaceViewController {
             recognitionLanguage.topAnchor.constraint(equalTo: languageTitle.bottomAnchor, constant: 5),
             recognitionLanguage.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 17),
             recognitionLanguage.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -17),
+            separation.topAnchor.constraint(equalTo: recognitionLanguage.bottomAnchor, constant: 14),
+            separation.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 17),
+            separation.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -17),
         ])
 
         return panel
