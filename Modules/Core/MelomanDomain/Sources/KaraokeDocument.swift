@@ -5,7 +5,9 @@ public struct KaraokeDocument: Codable, Equatable, Identifiable, Sendable {
     public let mediaID: UUID
     public var lines: [LyricLine]
 
-    public var id: UUID { mediaID }
+    public var id: UUID {
+        mediaID
+    }
 
     public init(mediaID: UUID, lines: [LyricLine] = []) {
         self.mediaID = mediaID

@@ -11,8 +11,9 @@ final class KaraokeEngineTests: XCTestCase {
 
         XCTAssertEqual(KaraokeEngine.progress(of: word, at: .zero), 0)
         XCTAssertEqual(KaraokeEngine.progress(of: word, at: start), 0)
+        let halfway = try XCTUnwrap(Timecode(microseconds: 3_000_000))
         XCTAssertEqual(
-            KaraokeEngine.progress(of: word, at: try XCTUnwrap(Timecode(microseconds: 3_000_000))),
+            KaraokeEngine.progress(of: word, at: halfway),
             0.5,
             accuracy: 0.00001
         )
@@ -20,10 +21,8 @@ final class KaraokeEngineTests: XCTestCase {
     }
 
     func testPlaybackAndSeekAreDeterministic() throws {
-        let lines = LyricsDraftBuilder.build(
-            text: "Один два\nтри",
-            duration: try XCTUnwrap(Timecode(microseconds: 6_000_000))
-        )
+        let duration = try XCTUnwrap(Timecode(microseconds: 6_000_000))
+        let lines = LyricsDraftBuilder.build(text: "Один два\nтри", duration: duration)
         let half = try XCTUnwrap(Timecode(microseconds: 1_000_000))
         let first = try XCTUnwrap(KaraokeEngine.frame(at: half, lines: lines))
         XCTAssertEqual(first.words.map(\.text), ["Один", "два"])
@@ -31,9 +30,7 @@ final class KaraokeEngineTests: XCTestCase {
 
         XCTAssertEqual(KaraokeEngine.frame(at: half, lines: lines), first)
         XCTAssertNil(KaraokeEngine.frame(at: .zero, lines: []))
-        XCTAssertNil(
-            KaraokeEngine.frame(at: try XCTUnwrap(Timecode(microseconds: 6_000_000)), lines: lines)
-        )
+        XCTAssertNil(KaraokeEngine.frame(at: duration, lines: lines))
     }
 
     func testHiddenWordsPreserveTiming() throws {

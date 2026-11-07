@@ -22,12 +22,14 @@ final class KaraokeTimelineStrip: NSView {
 
     var onSelect: ((UUID, Timecode) -> Void)?
 
-    override var isFlipped: Bool { true }
+    override var isFlipped: Bool {
+        true
+    }
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         NSColor.windowBackgroundColor.setFill()
-        bounds.fill()
+        NSRectFill(bounds)
 
         for word in lines.flatMap(\.words) {
             let rect = rectForWord(word)

@@ -15,7 +15,9 @@ final class KaraokeOverlayView: NSView {
         didSet { needsDisplay = true }
     }
 
-    override var isOpaque: Bool { false }
+    override var isOpaque: Bool {
+        false
+    }
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
@@ -60,7 +62,7 @@ final class KaraokeOverlayView: NSView {
                 let clip = CGRect(
                     x: startX,
                     y: -descent - 2,
-                    width: max(0, endX - startX) * word.progress,
+                    width: max(0, endX - startX) * CGFloat(word.progress),
                     height: ascent + descent + 5
                 )
                 context.clip(to: clip)

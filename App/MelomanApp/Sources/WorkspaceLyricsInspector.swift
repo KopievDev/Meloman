@@ -59,7 +59,7 @@ extension WorkspaceViewController {
         form.orientation = .vertical
         form.alignment = .leading
         form.spacing = 8
-        form.setHuggingPriority(.defaultLow, for: .horizontal)
+        form.setContentHuggingPriority(.defaultLow, for: .horizontal)
         for row in [lyricTextField, timings, actions, history] {
             row.translatesAutoresizingMaskIntoConstraints = false
             row.widthAnchor.constraint(equalTo: form.widthAnchor).isActive = true
