@@ -83,8 +83,6 @@ public final class MLXRoFormerSeparator {
             executable: executable,
             audioURL: audioURL,
             folder: folder,
-            vocals: vocals,
-            instrumental: instrumental,
             model: model
         )
     }
@@ -93,10 +91,10 @@ public final class MLXRoFormerSeparator {
         executable: URL,
         audioURL: URL,
         folder: URL,
-        vocals: URL,
-        instrumental: URL,
         model: MLXRoFormerModel
     ) async throws -> VocalStems {
+        let vocals = folder.appendingPathComponent("vocals.wav")
+        let instrumental = folder.appendingPathComponent("instrumental.wav")
         let temp = folder.appendingPathComponent(".running-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: temp, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: temp) }
