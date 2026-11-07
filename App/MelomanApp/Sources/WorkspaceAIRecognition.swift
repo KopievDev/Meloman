@@ -29,7 +29,12 @@ extension WorkspaceViewController {
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            var temporaryAudio: URL?
+            await performRecognition(mediaID: mediaID, asset: selected, mediaURL: mediaURL)
+        }
+    }
+
+    func performRecognition(mediaID: UUID, asset: MediaAsset, mediaURL: URL) async {
+        var temporaryAudio: URL?
             defer {
                 if let temporaryAudio {
                     try? FileManager.default.removeItem(at: temporaryAudio)
@@ -41,14 +46,14 @@ extension WorkspaceViewController {
             do {
                 let source = try await TranscriptionAudioPreparer().prepare(
                     source: mediaURL,
-                    kind: selected.kind
+                    kind: asset.kind
                 )
-                if selected.kind == .video {
+                if asset.kind == .video {
                     temporaryAudio = source
                 }
 
                 let words = try await speechRecognizer.recognize(audioAt: source)
-                let lines = RecognizedLyricsBuilder.lines(from: words, duration: selected.duration)
+                let lines = RecognizedLyricsBuilder.lines(from: words, duration: asset.duration)
                 guard !lines.isEmpty else {
                     showError("AI не обнаружил слов с корректными таймкодами. " +
                         "Попробуйте другой файл или ручную разметку.")
@@ -65,6 +70,5 @@ extension WorkspaceViewController {
                 statusLabel.stringValue = "AI: ошибка распознавания"
                 showError(error.localizedDescription)
             }
-        }
     }
 }
