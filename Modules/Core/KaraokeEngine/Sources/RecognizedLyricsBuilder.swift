@@ -44,7 +44,7 @@ public enum RecognizedLyricsBuilder {
             else { continue }
 
             let longPause = startMicroseconds - lastEnd > 800_000
-            if !current.isEmpty && (current.count >= maxWordsPerLine || longPause || lastSegment != source.segment) {
+            if !current.isEmpty, current.count >= maxWordsPerLine || longPause || lastSegment != source.segment {
                 finishLine()
             }
 

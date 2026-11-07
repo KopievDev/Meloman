@@ -31,7 +31,9 @@ public final class WhisperSpeechRecognizer {
     public init() {}
 
     public func prepare() async throws {
-        if engine != nil { return }
+        if engine != nil {
+            return
+        }
         if let preparation {
             return try await preparation.value
         }
@@ -41,10 +43,10 @@ public final class WhisperSpeechRecognizer {
             let marker = directory.appendingPathComponent(folderMarker)
             let modelFolder: URL
 
-            if let path = try? String(contentsOf: marker, encoding: .utf8),
-               FileManager.default.fileExists(atPath: path) {
+            let savedPath = (try? String(contentsOf: marker, encoding: .utf8)) ?? ""
+            if !savedPath.isEmpty, FileManager.default.fileExists(atPath: savedPath) {
                 onStatus?("AI: загрузка локальной модели…")
-                modelFolder = URL(fileURLWithPath: path)
+                modelFolder = URL(fileURLWithPath: savedPath)
             } else {
                 onStatus?("AI: загрузка модели Whisper small (требуется интернет)…")
                 modelFolder = try await WhisperKit.download(

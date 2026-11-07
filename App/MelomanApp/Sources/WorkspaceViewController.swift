@@ -1,7 +1,7 @@
 import AppKit
 import AVFoundation
-import MediaPipeline
 import LocalAI
+import MediaPipeline
 import MelomanDomain
 import ProjectStore
 
