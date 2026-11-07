@@ -21,6 +21,30 @@ let project = Project(
             dependencies: []
         ),
         .target(
+            name: "MediaPipeline",
+            destinations: .macOS,
+            product: .framework,
+            bundleId: "dev.kopiev.meloman.media",
+            deploymentTargets: .macOS("15.0"),
+            infoPlist: .default,
+            sources: ["Modules/Core/MediaPipeline/Sources/**"],
+            dependencies: [
+                .target(name: "MelomanDomain"),
+            ]
+        ),
+        .target(
+            name: "ProjectStore",
+            destinations: .macOS,
+            product: .framework,
+            bundleId: "dev.kopiev.meloman.store",
+            deploymentTargets: .macOS("15.0"),
+            infoPlist: .default,
+            sources: ["Modules/Core/ProjectStore/Sources/**"],
+            dependencies: [
+                .target(name: "MelomanDomain"),
+            ]
+        ),
+        .target(
             name: "Meloman",
             destinations: .macOS,
             product: .app,
@@ -37,6 +61,8 @@ let project = Project(
             sources: ["App/MelomanApp/Sources/**"],
             dependencies: [
                 .target(name: "MelomanDomain"),
+                .target(name: "MediaPipeline"),
+                .target(name: "ProjectStore"),
             ]
         ),
         .target(
@@ -51,13 +77,26 @@ let project = Project(
                 .target(name: "MelomanDomain"),
             ]
         ),
+        .target(
+            name: "ProjectStoreTests",
+            destinations: .macOS,
+            product: .unitTests,
+            bundleId: "dev.kopiev.meloman.store.tests",
+            deploymentTargets: .macOS("15.0"),
+            infoPlist: .default,
+            sources: ["Tests/ProjectStoreTests/**"],
+            dependencies: [
+                .target(name: "MelomanDomain"),
+                .target(name: "ProjectStore"),
+            ]
+        ),
     ],
     schemes: [
         .scheme(
             name: "Meloman",
             shared: true,
             buildAction: .buildAction(targets: ["Meloman"]),
-            testAction: .targets(["MelomanDomainTests"]),
+            testAction: .targets(["MelomanDomainTests", "ProjectStoreTests"]),
             runAction: .runAction(executable: "Meloman")
         ),
     ]

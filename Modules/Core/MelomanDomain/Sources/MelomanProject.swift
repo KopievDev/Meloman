@@ -14,6 +14,7 @@ public struct MelomanProject: Codable, Equatable, Identifiable, Sendable {
     public var name: String
     public let createdAt: Date
     public var tracks: [TimelineTrack]
+    public var media: [MediaAsset]
     public var lyrics: [LyricLine]
     public var vocalRemoval: VocalRemovalConfiguration
 
@@ -22,6 +23,7 @@ public struct MelomanProject: Codable, Equatable, Identifiable, Sendable {
         name: String,
         createdAt: Date = Date(),
         tracks: [TimelineTrack] = [],
+        media: [MediaAsset] = [],
         lyrics: [LyricLine] = [],
         vocalRemoval: VocalRemovalConfiguration = .init()
     ) {
@@ -29,6 +31,7 @@ public struct MelomanProject: Codable, Equatable, Identifiable, Sendable {
         self.name = name
         self.createdAt = createdAt
         self.tracks = tracks
+        self.media = media
         self.lyrics = lyrics
         self.vocalRemoval = vocalRemoval
     }
