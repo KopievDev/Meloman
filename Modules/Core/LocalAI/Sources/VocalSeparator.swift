@@ -73,6 +73,7 @@ public final class VocalSeparator {
             instrumental: instrumental
         )
     }
+
     private func generateStems(
         audioURL: URL,
         model: URL,
