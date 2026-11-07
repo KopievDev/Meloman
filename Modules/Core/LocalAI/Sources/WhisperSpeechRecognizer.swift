@@ -1,6 +1,6 @@
 import Foundation
 import MelomanDomain
-import WhisperKit
+@preconcurrency import WhisperKit
 
 public enum SpeechRecognitionError: LocalizedError {
     case noWords
