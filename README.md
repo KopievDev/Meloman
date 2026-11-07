@@ -4,7 +4,7 @@
 
 See the [MVP roadmap](docs/ROADMAP.md) for product scope and planned milestones.
 
-> **Status:** PR #7 adds an optional high-quality MLX Mel-Band RoFormer separator alongside Spleeter, keeping clean-vocal AI and per-engine caches. Known-lyrics alignment and export remain future milestones.
+> **Status:** PR #8 adds an experimental BS-RoFormer model option for cleaner vocal separation, alongside Spleeter and Mel-Band RoFormer. Known-lyrics alignment and export remain future milestones.
 
 ## Requirements
 
@@ -27,12 +27,12 @@ Select the **Meloman** scheme and run the app. Use **Импорт** (or drop med
 
 ## Build a runnable macOS app
 
-From the `feature/006-mlx-roformer` branch, run:
+From the `feature/007-bs-roformer-quality` branch, run:
 
 ```sh
 git fetch origin
-git switch --track origin/feature/006-mlx-roformer
-git pull --ff-only origin feature/006-mlx-roformer
+git switch --track origin/feature/007-bs-roformer-quality
+git pull --ff-only origin feature/007-bs-roformer-quality
 ./scripts/build.sh
 open dist/Meloman.app
 ```
@@ -149,6 +149,44 @@ the original audio, and Spleeter remains available as a fallback.
 The high-quality mode is an experimental opt-in runtime in this MVP; before
 shipping a notarized public application, bundle or manage its runtime and
 review model-weight licenses, security and offline packaging.
+
+
+## Experimental BS-RoFormer option (PR #8)
+
+The Inspector now exposes **BS-RoFormer · эксперимент** as a third vocal
+separation profile. It runs the `model_bs_roformer_ep_317_sdr_12.9755.ckpt`
+checkpoint supported by our pinned `mlx-audio-separator==0.1.20` runtime.
+It can improve vocal clarity on some mixes but is **not guaranteed to outperform**
+the current Mel-Band model, especially for individual consonants and ad-libs.
+
+The first run may need to download a large checkpoint and convert it to MLX.
+Install the optional conversion dependencies in Meloman's existing private venv:
+
+```sh
+./scripts/setup-mlx.sh --quality
+```
+
+This installs extra Python conversion tools (including PyTorch and ONNX) in
+the **private** environment only. It can require considerable disk space,
+download time and extra memory; it never installs into system Python. After
+conversion/model caching, inference is local and offline.
+
+- **Spleeter · быстрее** — native Core ML baseline
+- **Mel-Band RoFormer · качество** — existing working lightweight MLX model
+- **BS-RoFormer · эксперимент** — optional heavyweight model
+
+All three use distinct cache namespaces. Switching engines does not silently
+recycle another model's vocals. For a proper comparison, listen to the same
+10–20 second verse of the song with all three models, noting instrumental
+bleed and consonant preservation separately. Keep the existing Mel-Band
+model as the default: it has already been tested on a real song.
+
+The MLX package's current model support is pinned to v0.1.20. Larger
+preconverted models in a forthcoming Hugging Face catalog are not yet
+integrated into that released package and are intentionally not used here.
+**Distribution caveat:** the BS checkpoint license must be reviewed before
+shipping the trained weights in a public installer; this PR only supports
+the user's local opt-in download.
 
 ## Tests and quality checks
 
