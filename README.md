@@ -25,6 +25,28 @@ open Meloman.xcworkspace
 
 Select the **Meloman** scheme and run the app. An empty AppKit editing workspace opens.
 
+## Build a runnable macOS app
+
+From the `feature/001-bootstrap` branch, run:
+
+```sh
+git fetch origin
+git switch feature/001-bootstrap
+git pull --ff-only origin feature/001-bootstrap
+./scripts/build.sh
+open dist/Meloman.app
+```
+
+The script installs the project's pinned Tuist release (via mise), generates the workspace, compiles a Release build, and creates:
+
+- `dist/Meloman.app` — the complete macOS app bundle.
+- `dist/Meloman.app/Contents/MacOS/Meloman` — its Mach-O executable.
+- `dist/Meloman-macOS-Release-unsigned.zip` — a ZIP suitable for CI artifacts.
+
+Optional: `./scripts/build.sh --debug` to build Debug, or `./scripts/build.sh --run` to launch after building.
+
+**Unsigned development build:** this does not code-sign or notarize the app. For distribution to other Macs, a separate signed/notarized release pipeline will be required.
+
 ## Tests and quality checks
 
 Install the CLI tools once using `brew install swiftlint swiftformat`, then run:
@@ -42,7 +64,7 @@ xcodebuild test -workspace Meloman.xcworkspace -scheme Meloman -destination 'pla
 App/MelomanApp/Sources/           Native AppKit app and editor shell
 Modules/Core/MelomanDomain/       Platform-agnostic project, karaoke and timeline models
 Tests/DomainTests/                Foundation/XCTest smoke and serialization tests
-Config/                           SwiftFormat and SwiftLint rules
+Config/                           SwiftFormat and SwiftLint rules\nscripts/build.sh                   Build local unsigned .app + ZIP
 docs/ROADMAP.md                   MVP plan
 docs/ADR/                          Architectural decisions
 Project.swift / Tuist.swift       Tuist manifests
@@ -55,4 +77,4 @@ Future modules (MediaPipeline, ProjectStore, AIContracts, LocalAI, KaraokeEngine
 
 ## CI
 
-The `CI` GitHub Actions workflow runs SwiftFormat, SwiftLint, Tuist generation, and macOS unit tests on pull requests and pushes to `master`. No Tuist account or cloud cache is required.
+The `CI` GitHub Actions workflow runs SwiftFormat, SwiftLint, Tuist generation, macOS unit tests, and an unsigned Release app build on pull requests and pushes to `master`. No Tuist account or cloud cache is required.

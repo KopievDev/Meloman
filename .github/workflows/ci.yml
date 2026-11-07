@@ -40,3 +40,14 @@ jobs:
             -destination 'platform=macOS' \
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO
+
+      - name: Build unsigned Release .app
+        run: ./scripts/build.sh
+
+      - name: Upload unsigned macOS build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Meloman-macOS-unsigned
+          path: dist/Meloman-macOS-Release-unsigned.zip
+          if-no-files-found: error
+          retention-days: 7

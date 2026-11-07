@@ -2,6 +2,7 @@
 *.xcodeproj/
 *.xcworkspace/
 DerivedData/
+dist/
 .build/
 Tuist/Dependencies/
 Tuist/.build/
