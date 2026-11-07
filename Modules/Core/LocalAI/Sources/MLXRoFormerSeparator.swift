@@ -114,7 +114,7 @@ public final class MLXRoFormerSeparator {
         )
     }
 
-    nonisolated private static func run(
+    private nonisolated static func run(
         executable: URL,
         audio: URL,
         output: URL,
@@ -138,7 +138,7 @@ public final class MLXRoFormerSeparator {
         try process.run()
         let bytes = pipe.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
-        let message = String(decoding: bytes.suffix(3_000), as: UTF8.self)
+        let message = String(decoding: bytes.suffix(3000), as: UTF8.self)
         return (process.terminationStatus, message)
     }
 }
