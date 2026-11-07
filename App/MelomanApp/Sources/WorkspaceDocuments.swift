@@ -59,6 +59,9 @@ extension WorkspaceViewController {
                 }.value
                 guard let self else { return }
                 project = loaded.project
+                selectedWordID = nil
+                undoHistory.removeAll()
+                redoHistory.removeAll()
                 mediaURLs = loaded.mediaURLs
                 projectURL = url
                 selectedMediaID = project.media.first?.id

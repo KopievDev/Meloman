@@ -21,14 +21,15 @@ extension WorkspaceViewController {
         saveButton.target = self
         saveButton.action = #selector(saveProject(_:))
 
-        let karaoke = NSButton(title: "Караоке", target: nil, action: nil)
-        karaoke.isEnabled = false
-        karaoke.toolTip = "Генерация караоке появится в PR #3"
+        karaokeButton.target = self
+        karaokeButton.action = #selector(showLyricsInput(_:))
+        karaokeButton.isEnabled = false
+        karaokeButton.toolTip = "Добавить текст и предварительную пословную разметку"
         let export = NSButton(title: "Экспорт", target: nil, action: nil)
         export.isEnabled = false
         export.toolTip = "Экспорт MP4 появится позднее"
 
-        let buttons = NSStackView(views: [importButton, openButton, saveButton, karaoke, export])
+        let buttons = NSStackView(views: [importButton, openButton, saveButton, karaokeButton, export])
         buttons.spacing = 8
 
         for child in [identity, buttons] {

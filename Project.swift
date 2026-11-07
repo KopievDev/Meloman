@@ -45,6 +45,18 @@ let project = Project(
             ]
         ),
         .target(
+            name: "KaraokeEngine",
+            destinations: .macOS,
+            product: .framework,
+            bundleId: "dev.kopiev.meloman.karaoke",
+            deploymentTargets: .macOS("15.0"),
+            infoPlist: .default,
+            sources: ["Modules/Core/KaraokeEngine/Sources/**"],
+            dependencies: [
+                .target(name: "MelomanDomain"),
+            ]
+        ),
+        .target(
             name: "Meloman",
             destinations: .macOS,
             product: .app,
@@ -63,6 +75,7 @@ let project = Project(
                 .target(name: "MelomanDomain"),
                 .target(name: "MediaPipeline"),
                 .target(name: "ProjectStore"),
+                .target(name: "KaraokeEngine"),
             ]
         ),
         .target(
@@ -90,13 +103,26 @@ let project = Project(
                 .target(name: "ProjectStore"),
             ]
         ),
+        .target(
+            name: "KaraokeEngineTests",
+            destinations: .macOS,
+            product: .unitTests,
+            bundleId: "dev.kopiev.meloman.karaoke.tests",
+            deploymentTargets: .macOS("15.0"),
+            infoPlist: .default,
+            sources: ["Tests/KaraokeEngineTests/**"],
+            dependencies: [
+                .target(name: "MelomanDomain"),
+                .target(name: "KaraokeEngine"),
+            ]
+        ),
     ],
     schemes: [
         .scheme(
             name: "Meloman",
             shared: true,
             buildAction: .buildAction(targets: ["Meloman"]),
-            testAction: .targets(["MelomanDomainTests", "ProjectStoreTests"]),
+            testAction: .targets(["MelomanDomainTests", "ProjectStoreTests", "KaraokeEngineTests"]),
             runAction: .runAction(executable: "Meloman")
         ),
     ]
