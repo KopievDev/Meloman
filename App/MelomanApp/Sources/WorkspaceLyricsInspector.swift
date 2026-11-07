@@ -45,6 +45,7 @@ extension WorkspaceViewController {
         }
         return form
     }
+
     func configureLyricButtons() {
         applyLyricButton.title = "Применить"
         applyLyricButton.target = self
