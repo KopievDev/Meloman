@@ -20,7 +20,9 @@ public enum SpeechRecognitionError: LocalizedError {
 /// initializes it automatically at launch and reuses it offline on subsequent launches.
 @MainActor
 public final class WhisperSpeechRecognizer {
-    public var onProgress: ((AIProcessingUpdate) -> Void)?\n    private var isDownloadingModel = false\n    private var isRecognizing = false
+    public var onProgress: ((AIProcessingUpdate) -> Void)?
+    private var isDownloadingModel = false
+    private var isRecognizing = false
 
     private var engine: WhisperKit?
     private var preparation: Task<Void, Error>?
@@ -59,11 +61,11 @@ public final class WhisperSpeechRecognizer {
                     progressCallback: { [weak self] progress in
                         let fraction = progress.totalUnitCount > 0 ? progress.fractionCompleted : nil
                         Task { @MainActor [weak self] in
-                            guard let self, self.isDownloadingModel else { return }
+                            guard let self, isDownloadingModel else { return }
                             let detail = fraction.map {
                                 "Скачано \(Int(max(0, min(1, $0)) * 100))% данных модели"
                             } ?? "Получение файлов модели"
-                            self.onProgress?(AIProcessingUpdate(
+                            onProgress?(AIProcessingUpdate(
                                 title: "Загрузка модели Whisper small",
                                 detail: detail,
                                 fraction: fraction
@@ -131,7 +133,7 @@ public final class WhisperSpeechRecognizer {
                 guard count > 0, count.isMultiple(of: 8) else { return nil }
                 let window = progress.windowId + 1
                 Task { @MainActor [weak self] in
-                    guard let self, self.isRecognizing else { return }
+                    guard let self, isRecognizing else { return }
                     self.onProgress?(AIProcessingUpdate(
                         title: "Распознавание песни",
                         detail: "Фрагмент \(window): обработано \(count) токенов (не слов)"
