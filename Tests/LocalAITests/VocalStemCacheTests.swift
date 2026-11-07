@@ -19,7 +19,8 @@ final class VocalStemCacheTests: XCTestCase {
         XCTAssertEqual(hash1.count, 64)
 
         try Data("changed payload".utf8).write(to: renamed)
-        XCTAssertNotEqual(try await VocalStemCache.key(for: renamed), hash1)
+        let changedHash = try await VocalStemCache.key(for: renamed)
+        XCTAssertNotEqual(changedHash, hash1)
     }
 
     func testAbsentStemIsNeverAcceptedAsCacheHit() {
