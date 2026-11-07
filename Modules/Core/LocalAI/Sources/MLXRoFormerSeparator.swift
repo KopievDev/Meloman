@@ -23,7 +23,7 @@ public enum MLXRoFormerError: LocalizedError {
 public final class MLXRoFormerSeparator {
     public var onProgress: ((AIProcessingUpdate) -> Void)?
 
-    public static let modelRevision = "mlx-roformer-zfturbo-v1-0.1.20"
+    public nonisolated static let modelRevision = "mlx-roformer-zfturbo-v1-0.1.20"
 
     public init() {}
 
