@@ -120,5 +120,4 @@ extension WorkspaceViewController {
         warning.addButton(withTitle: "Сохранить частичную разметку")
         return warning.runModal() == .alertSecondButtonReturn
     }
-
 }
