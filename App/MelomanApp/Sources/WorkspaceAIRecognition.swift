@@ -69,49 +69,56 @@ extension WorkspaceViewController {
             default: nil
             }
             let words = try await speechRecognizer.recognize(audioAt: source, language: language)
-            displayAIProgress(title: "Шаг 3/3 · Разметка караоке", detail: "Формирование строк и слов")
-            let lines = RecognizedLyricsBuilder.lines(from: words, duration: asset.duration)
-            guard !lines.isEmpty else {
-                displayAIProgress(title: "Нет распознанных слов", detail: "Проверьте файл", active: false)
-                showError("AI не обнаружил слов с корректными таймкодами. " +
-                    "Попробуйте другой файл или ручную разметку.")
-                return
-            }
-
-            let sparse = words.count < max(5, Int(Double(asset.duration.microseconds) / 20_000_000))
-            if sparse {
-                let warning = NSAlert()
-                warning.messageText = "Найдено слишком мало слов"
-                warning.informativeText = "Whisper распознал только \(words.count) слов. " +
-                    "Не рекомендуем заменять полный текст. " +
-                    "Для песен лучше вставить известный текст, а затем выполнить точную синхронизацию."
-                warning.addButton(withTitle: "Не заменять текст")
-                warning.addButton(withTitle: "Сохранить частичную разметку")
-                if warning.runModal() != .alertSecondButtonReturn {
-                    displayAIProgress(
-                        title: "Разметка не заменена",
-                        detail: "Вставьте текст через «Текст песни»",
-                        active: false
-                    )
-                    return
-                }
-            }
-
-            editLyrics(lines, for: mediaID)
-            if selectedMediaID == mediaID {
-                selectedWordID = lines.first?.words.first?.id
-                refreshKaraoke()
-            }
-            displayAIProgress(
-                title: "Готово — \(words.count) слов",
-                detail: "Проверьте таймкоды и сохраните проект",
-                active: false
-            )
-            statusLabel.stringValue = "AI: разметка создана"
+            handleRecognizedWords(words, mediaID: mediaID, duration: asset.duration)
         } catch {
             statusLabel.stringValue = "AI: ошибка распознавания"
             displayAIProgress(title: "Ошибка распознавания", detail: error.localizedDescription, active: false)
             showError(error.localizedDescription)
         }
     }
+
+    func handleRecognizedWords(_ words: [RecognizedWord], mediaID: UUID, duration: Timecode) {
+        displayAIProgress(title: "Шаг 3/3 · Разметка караоке", detail: "Формирование строк и слов")
+        let lines = RecognizedLyricsBuilder.lines(from: words, duration: duration)
+        guard !lines.isEmpty else {
+            displayAIProgress(title: "Нет распознанных слов", detail: "Проверьте файл", active: false)
+            showError("AI не обнаружил слов с корректными таймкодами. " +
+                "Попробуйте другой файл или ручную разметку.")
+            return
+        }
+
+        let sparse = words.count < max(5, Int(Double(duration.microseconds) / 20_000_000))
+        guard !sparse || confirmPartialTranscript(count: words.count) else {
+            displayAIProgress(
+                title: "Разметка не заменена",
+                detail: "Вставьте текст через «Текст песни»",
+                active: false
+            )
+            return
+        }
+
+        editLyrics(lines, for: mediaID)
+        if selectedMediaID == mediaID {
+            selectedWordID = lines.first?.words.first?.id
+            refreshKaraoke()
+        }
+        displayAIProgress(
+            title: "Готово — \(words.count) слов",
+            detail: "Проверьте таймкоды и сохраните проект",
+            active: false
+        )
+        statusLabel.stringValue = "AI: разметка создана"
+    }
+
+    func confirmPartialTranscript(count: Int) -> Bool {
+        let warning = NSAlert()
+        warning.messageText = "Найдено слишком мало слов"
+        warning.informativeText = "Whisper распознал только \(count) слов. " +
+            "Не рекомендуем заменять полный текст. " +
+            "Для песен лучше вставить известный текст, а затем выполнить точную синхронизацию."
+        warning.addButton(withTitle: "Не заменять текст")
+        warning.addButton(withTitle: "Сохранить частичную разметку")
+        return warning.runModal() == .alertSecondButtonReturn
+    }
+
 }
