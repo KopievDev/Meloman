@@ -65,6 +65,21 @@ public final class VocalSeparator {
             self?.onProgress?(update)
         }
 
+        return try await generateStems(
+            audioURL: audioURL,
+            model: model,
+            destination: destination,
+            vocals: vocals,
+            instrumental: instrumental
+        )
+    }
+    private func generateStems(
+        audioURL: URL,
+        model: URL,
+        destination: URL,
+        vocals: URL,
+        instrumental: URL
+    ) async throws -> VocalStems {
         let stage = destination.appendingPathComponent(".working-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: stage, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: stage) }
