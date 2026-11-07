@@ -56,6 +56,19 @@ Select an imported MP3/M4A/WAV, or an MP4/MOV video, and press **AI текст**
 
 **Limitations:** Whisper is a speech recognition model, not specialized song alignment. Dense instrumental mixes, long-held vowels, background singers and effects may cause missing or inaccurate words. The model does not yet remove original vocals or align a supplied lyrics sheet (forced alignment is a later task). The app must not claim perfect karaoke sync.
 
+### Accuracy with musical recordings
+
+Plain Whisper transcription may detect only a few incorrect words on loud music.
+Select **Русский** in the inspector for Russian songs to disable language auto-detection,
+but this **does not guarantee** good results. If the transcript is unusually sparse,
+Meloman warns before replacing any saved karaoke lyrics.
+
+For a song with known lyrics, use **Текст песни** to paste the correct words.
+Those words remain editable, but their initial timing is **only approximate**.
+Accurate offline *forced alignment* of known lyrics to an isolated vocal track
+is a separate upcoming milestone (candidate engines: stable-ts or a CTC aligner).
+Do not treat this basic ASR as the final karaoke transcription pipeline.
+
 ## Tests and quality checks
 
 Install the CLI tools once using `brew install swiftlint swiftformat`, then run:

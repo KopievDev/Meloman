@@ -10,8 +10,11 @@ extension WorkspaceViewController {
         inspectorInfo.lineBreakMode = .byWordWrapping
 
         let lyricsControls = makeLyricsInspectorControls()
+        let languageTitle = label("ЯЗЫК РАСПОЗНАВАНИЯ", size: 11, color: .secondaryLabelColor)
+        recognitionLanguage.addItems(withTitles: ["Авто", "Русский", "English"])
+        recognitionLanguage.selectItem(at: 1)
 
-        for child in [title, inspectorInfo, lyricsControls] {
+        for child in [title, inspectorInfo, lyricsControls, languageTitle, recognitionLanguage] {
             child.translatesAutoresizingMaskIntoConstraints = false
             panel.addSubview(child)
         }
@@ -25,6 +28,11 @@ extension WorkspaceViewController {
             lyricsControls.topAnchor.constraint(equalTo: inspectorInfo.bottomAnchor, constant: 16),
             lyricsControls.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 17),
             lyricsControls.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -17),
+            languageTitle.topAnchor.constraint(equalTo: lyricsControls.bottomAnchor, constant: 16),
+            languageTitle.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 17),
+            recognitionLanguage.topAnchor.constraint(equalTo: languageTitle.bottomAnchor, constant: 5),
+            recognitionLanguage.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 17),
+            recognitionLanguage.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -17),
         ])
 
         return panel

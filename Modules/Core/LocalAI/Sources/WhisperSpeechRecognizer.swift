@@ -16,14 +16,14 @@ public enum SpeechRecognitionError: LocalizedError {
     }
 }
 
-/// Owned by the UI's main actor. Downloads a multilingual model once to Application Support,
-/// initializes it automatically at launch and reuses it offline on subsequent launches.
+/// Loads a multilingual model once, then runs local word-level transcription.
+/// Model download and decoding progress must not be mistaken for overall completion.
 @MainActor
 public final class WhisperSpeechRecognizer {
     public var onProgress: ((AIProcessingUpdate) -> Void)?
+
     private var isDownloadingModel = false
     private var isRecognizing = false
-
     private var engine: WhisperKit?
     private var preparation: Task<Void, Error>?
 
@@ -41,57 +41,8 @@ public final class WhisperSpeechRecognizer {
         }
 
         let task = Task { @MainActor in
-            let directory = try modelDirectory()
-            let marker = directory.appendingPathComponent(folderMarker)
-            let modelFolder: URL
-
-            let savedPath = (try? String(contentsOf: marker, encoding: .utf8)) ?? ""
-            if !savedPath.isEmpty, FileManager.default.fileExists(atPath: savedPath) {
-                onProgress?(AIProcessingUpdate(title: "Подготовка модели", detail: "Загрузка из локального кеша"))
-                modelFolder = URL(fileURLWithPath: savedPath)
-            } else {
-                isDownloadingModel = true
-                onProgress?(AIProcessingUpdate(
-                    title: "Загрузка модели Whisper small",
-                    detail: "Скачивание на Mac, потребуется интернет"
-                ))
-                modelFolder = try await WhisperKit.download(
-                    variant: variant,
-                    downloadBase: directory,
-                    progressCallback: { [weak self] progress in
-                        let fraction = progress.totalUnitCount > 0 ? progress.fractionCompleted : nil
-                        Task { @MainActor [weak self] in
-                            guard let self, isDownloadingModel else { return }
-                            let detail = fraction.map {
-                                "Скачано \(Int(max(0, min(1, $0)) * 100))% данных модели"
-                            } ?? "Получение файлов модели"
-                            onProgress?(AIProcessingUpdate(
-                                title: "Загрузка модели Whisper small",
-                                detail: detail,
-                                fraction: fraction
-                            ))
-                        }
-                    }
-                )
-                isDownloadingModel = false
-                try modelFolder.path.write(to: marker, atomically: true, encoding: .utf8)
-            }
-
-            onProgress?(AIProcessingUpdate(title: "Инициализация модели", detail: "Подготовка Core ML"))
-            let config = WhisperKitConfig(
-                modelFolder: modelFolder.path,
-                verbose: false,
-                load: true,
-                download: false
-            )
-            engine = try await WhisperKit(config)
-            onProgress?(AIProcessingUpdate(
-                title: "AI готов",
-                detail: "Whisper small доступна офлайн",
-                isActive: false
-            ))
+            try await loadModel()
         }
-
         preparation = task
         defer { preparation = nil }
 
@@ -108,64 +59,125 @@ public final class WhisperSpeechRecognizer {
         }
     }
 
-    public func recognize(audioAt url: URL) async throws -> [RecognizedWord] {
+    private func loadModel() async throws {
+        let directory = try modelDirectory()
+        let modelFolder = try await resolveModelFolder(in: directory)
+
+        onProgress?(AIProcessingUpdate(title: "Инициализация модели", detail: "Подготовка Core ML"))
+        let config = WhisperKitConfig(
+            modelFolder: modelFolder.path,
+            verbose: false,
+            load: true,
+            download: false
+        )
+        engine = try await WhisperKit(config)
+        onProgress?(AIProcessingUpdate(
+            title: "AI готов",
+            detail: "Whisper small доступна офлайн",
+            isActive: false
+        ))
+    }
+
+    private func resolveModelFolder(in directory: URL) async throws -> URL {
+        let marker = directory.appendingPathComponent(folderMarker)
+        let savedPath = (try? String(contentsOf: marker, encoding: .utf8)) ?? ""
+
+        if !savedPath.isEmpty, FileManager.default.fileExists(atPath: savedPath) {
+            onProgress?(AIProcessingUpdate(title: "Подготовка модели", detail: "Загрузка из локального кеша"))
+            return URL(fileURLWithPath: savedPath)
+        }
+
+        isDownloadingModel = true
+        onProgress?(AIProcessingUpdate(
+            title: "Загрузка модели Whisper small",
+            detail: "Скачивание на Mac, потребуется интернет"
+        ))
+        let folder = try await WhisperKit.download(
+            variant: variant,
+            downloadBase: directory,
+            progressCallback: { [weak self] progress in
+                let fraction = progress.totalUnitCount > 0 ? progress.fractionCompleted : nil
+                Task { @MainActor [weak self] in
+                    guard let self, isDownloadingModel else { return }
+                    onProgress?(AIProcessingUpdate(
+                        title: "Загрузка модели Whisper small",
+                        detail: fraction.map {
+                            "Скачано \(Int(max(0, min(1, $0)) * 100))% модели"
+                        } ?? "Получение файлов модели",
+                        fraction: fraction
+                    ))
+                }
+            }
+        )
+        isDownloadingModel = false
+        try folder.path.write(to: marker, atomically: true, encoding: .utf8)
+        return folder
+    }
+
+    public func recognize(audioAt url: URL, language: String? = nil) async throws -> [RecognizedWord] {
         try await prepare()
         guard let engine else { throw SpeechRecognitionError.modelUnavailable }
 
         isRecognizing = true
+        defer { isRecognizing = false }
         onProgress?(AIProcessingUpdate(
-            title: "Распознавание песни",
-            detail: "Whisper анализирует аудио, это может занять несколько минут"
+            title: "Шаг 2/3 · Распознавание песни",
+            detail: "Обработка аудио — на плотной музыке точность может быть низкой"
         ))
         let options = DecodingOptions(
             task: .transcribe,
-            language: nil,
-            usePrefillPrompt: false,
-            detectLanguage: true,
+            language: language,
+            usePrefillPrompt: true,
+            detectLanguage: language == nil,
             wordTimestamps: true
         )
-        defer { isRecognizing = false }
         let results = try await engine.transcribe(
             audioPath: url.path,
             decodeOptions: options,
-            callback: { [weak self] progress in
-                let count = progress.tokens.count
-                guard count > 0, count.isMultiple(of: 8) else { return nil }
-                let window = progress.windowId + 1
-                Task { @MainActor [weak self] in
-                    guard let self, isRecognizing else { return }
-                    onProgress?(AIProcessingUpdate(
-                        title: "Распознавание песни",
-                        detail: "Фрагмент \(window): обработано \(count) токенов (не слов)"
-                    ))
-                }
-                return nil
-            }
+            callback: transcriptionCallback()
         )
+        let words = recognizedWords(from: results)
+        guard !words.isEmpty else { throw SpeechRecognitionError.noWords }
+        onProgress?(AIProcessingUpdate(
+            title: "Расшифровка готова",
+            detail: "Проверьте слова и временные метки",
+            isActive: false
+        ))
+        return words
+    }
+
+    private func transcriptionCallback() -> TranscriptionCallback {
+        { [weak self] progress in
+            let count = progress.tokens.count
+            guard count > 0, count.isMultiple(of: 8) else { return nil }
+            let window = progress.windowId + 1
+            Task { @MainActor [weak self] in
+                guard let self, isRecognizing else { return }
+                onProgress?(AIProcessingUpdate(
+                    title: "Шаг 2/3 · Распознавание песни",
+                    detail: "Фрагмент \(window): обработано \(count) токенов (не слов)"
+                ))
+            }
+            return nil
+        }
+    }
+
+    private func recognizedWords(from results: [TranscriptionResult]) -> [RecognizedWord] {
         var words: [RecognizedWord] = []
         var segmentIndex = 0
-
         for result in results {
             for segment in result.segments {
                 for word in segment.words ?? [] {
-                    words.append(
-                        RecognizedWord(
-                            text: word.word,
-                            startSeconds: Double(word.start),
-                            endSeconds: Double(word.end),
-                            segment: segmentIndex
-                        )
-                    )
+                    words.append(RecognizedWord(
+                        text: word.word,
+                        startSeconds: Double(word.start),
+                        endSeconds: Double(word.end),
+                        segment: segmentIndex
+                    ))
                 }
                 segmentIndex += 1
             }
         }
-        guard !words.isEmpty else { throw SpeechRecognitionError.noWords }
-        onProgress?(AIProcessingUpdate(
-            title: "AI: расшифровка готова",
-            detail: "Проверьте слова и временные метки",
-            isActive: false
-        ))
         return words
     }
 

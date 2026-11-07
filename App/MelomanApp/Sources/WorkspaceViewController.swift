@@ -16,6 +16,7 @@ final class WorkspaceViewController: NSViewController {
     let mediaImporter = MediaImporter()
     let speechRecognizer = WhisperSpeechRecognizer()
     let recognizeButton = NSButton(title: "AI текст", target: nil, action: nil)
+    let recognitionLanguage = NSPopUpButton(frame: .zero, pullsDown: false)
     private var didStartModel = false
     let aiProgressPanel = NSView()
     let aiProgressTitle = NSTextField(labelWithString: "")

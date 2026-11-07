@@ -63,7 +63,12 @@ extension WorkspaceViewController {
                 temporaryAudio = source
             }
 
-            let words = try await speechRecognizer.recognize(audioAt: source)
+            let language: String? = switch recognitionLanguage.indexOfSelectedItem {
+            case 1: "ru"
+            case 2: "en"
+            default: nil
+            }
+            let words = try await speechRecognizer.recognize(audioAt: source, language: language)
             displayAIProgress(title: "Шаг 3/3 · Разметка караоке", detail: "Формирование строк и слов")
             let lines = RecognizedLyricsBuilder.lines(from: words, duration: asset.duration)
             guard !lines.isEmpty else {
@@ -71,6 +76,25 @@ extension WorkspaceViewController {
                 showError("AI не обнаружил слов с корректными таймкодами. " +
                     "Попробуйте другой файл или ручную разметку.")
                 return
+            }
+
+            let sparse = words.count < max(5, Int(Double(asset.duration.microseconds) / 20_000_000))
+            if sparse {
+                let warning = NSAlert()
+                warning.messageText = "Найдено слишком мало слов"
+                warning.informativeText = "Whisper распознал только \(words.count) слов. " +
+                    "Не рекомендуем заменять полный текст. " +
+                    "Для песен лучше вставить известный текст, а затем выполнить точную синхронизацию."
+                warning.addButton(withTitle: "Не заменять текст")
+                warning.addButton(withTitle: "Сохранить частичную разметку")
+                if warning.runModal() != .alertSecondButtonReturn {
+                    displayAIProgress(
+                        title: "Разметка не заменена",
+                        detail: "Вставьте текст через «Текст песни»",
+                        active: false
+                    )
+                    return
+                }
             }
 
             editLyrics(lines, for: mediaID)
