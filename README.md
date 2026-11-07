@@ -4,7 +4,7 @@
 
 See the [MVP roadmap](docs/ROADMAP.md) for product scope and planned milestones.
 
-> **Status:** PR #2 adds media import, native playback and project packages. Transcription, vocal separation, karaoke rendering and MP4 export are not implemented yet.
+> **Status:** PR #3 adds editable manually-timed karaoke and progressive word-fill preview. Automated singing transcription, vocal separation and MP4 export are not yet implemented.
 
 ## Requirements
 
@@ -23,16 +23,16 @@ mise exec -- tuist generate
 open Meloman.xcworkspace
 ```
 
-Select the **Meloman** scheme and run the app. Use **Импорт** (or drop media files) to load MP3/WAV/M4A/AIFF/MP4/MOV/M4V. Select a media item and use Play/Pause or the seek slider. **Сохранить проект** writes a portable `.meloman` folder containing `project.json` and copies of the source media. **Открыть проект** restores the project and playback.
+Select the **Meloman** scheme and run the app. Use **Импорт** (or drop media files) to load MP3/WAV/M4A/AIFF/MP4/MOV/M4V. Select a media item and use Play/Pause or the seek slider. Choose **Текст песни**, paste lines and click **Создать разметку**. The first word timing draft is only an **even-duration approximation**, not recognition of singing. Select a K1 word block on the timeline to seek and edit its text, start/end in seconds, or **Скрыть слово**. Press **Применить**, then **Сохранить** to persist everything to a portable `.meloman` folder. The karaoke overlay fills the actual glyphs from left to right as the media plays. The current editor is preview-only; video export follows in later PRs.
 
 ## Build a runnable macOS app
 
-From the `feature/002-media-import` branch, run:
+From the `feature/003-karaoke-engine` branch, run:
 
 ```sh
 git fetch origin
-git switch feature/002-media-import
-git pull --ff-only origin feature/002-media-import
+git switch --track origin/feature/003-karaoke-engine
+git pull --ff-only origin feature/003-karaoke-engine
 ./scripts/build.sh
 open dist/Meloman.app
 ```
@@ -65,6 +65,8 @@ App/MelomanApp/Sources/           Native AppKit app and editor shell
 Modules/Core/MelomanDomain/       Platform-agnostic project, karaoke and timeline models
 Modules/Core/MediaPipeline/       AVFoundation-backed media metadata inspection
 Modules/Core/ProjectStore/        Versioned portable .meloman package persistence
+Modules/Core/KaraokeEngine/       Pure per-word timing, draft and word-fill state
+Tests/KaraokeEngineTests/         Progress/seek/hidden/per-media lyric tests
 Tests/ProjectStoreTests/          Package persistence integration tests
 Tests/DomainTests/                Foundation/XCTest smoke and serialization tests
 Config/                           SwiftFormat and SwiftLint rules
@@ -75,7 +77,7 @@ Project.swift / Tuist.swift       Tuist manifests
 mise.toml                         Pinned Tuist version
 ```
 
-Future modules (AIContracts, LocalAI, KaraokeEngine, TimelineEngine, CompositionRenderer, ExportEngine, and feature modules) will be created in the PR that introduces their first real implementation. This avoids empty framework targets.
+Future modules (AIContracts, LocalAI, TimelineEngine, CompositionRenderer, ExportEngine, and feature modules) will be created in the PR that introduces their first real implementation. This avoids empty framework targets.
 
 **Note:** PR #2 previews the currently selected media source; layered mixing, waveform, karaoke and final timeline composition follow in later PRs.\n\n**No game mode.** The editor supports manually hiding words for party videos; scoring and playing the game are handled outside Meloman.
 

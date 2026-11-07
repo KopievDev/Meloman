@@ -6,10 +6,12 @@ extension WorkspaceViewController {
         let panel = makePanel()
         let title = label("ИНСПЕКТОР", size: 11, weight: .semibold, color: .secondaryLabelColor)
         inspectorInfo.textColor = .secondaryLabelColor
-        inspectorInfo.maximumNumberOfLines = 0
+        inspectorInfo.maximumNumberOfLines = 4
         inspectorInfo.lineBreakMode = .byWordWrapping
 
-        for child in [title, inspectorInfo] {
+        let lyricsControls = makeLyricsInspectorControls()
+
+        for child in [title, inspectorInfo, lyricsControls] {
             child.translatesAutoresizingMaskIntoConstraints = false
             panel.addSubview(child)
         }
@@ -20,6 +22,9 @@ extension WorkspaceViewController {
             inspectorInfo.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 18),
             inspectorInfo.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 17),
             inspectorInfo.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -17),
+            lyricsControls.topAnchor.constraint(equalTo: inspectorInfo.bottomAnchor, constant: 16),
+            lyricsControls.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 17),
+            lyricsControls.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -17),
         ])
 
         return panel
@@ -38,7 +43,16 @@ extension WorkspaceViewController {
         tracks.alignment = .leading
         tracks.spacing = 20
 
-        for child in [heading, timelineInfo, tracks, statusLabel] {
+        let wordScroll = NSScrollView()
+        wordScroll.hasHorizontalScroller = true
+        wordScroll.drawsBackground = false
+        lyricStrip.frame = NSRect(x: 0, y: 0, width: 660, height: 36)
+        lyricStrip.onSelect = { [weak self] id, time in
+            self?.selectLyricWord(id, seekTo: time)
+        }
+        wordScroll.documentView = lyricStrip
+
+        for child in [heading, timelineInfo, tracks, wordScroll, statusLabel] {
             child.translatesAutoresizingMaskIntoConstraints = false
             panel.addSubview(child)
         }
@@ -51,6 +65,10 @@ extension WorkspaceViewController {
             timelineInfo.leadingAnchor.constraint(equalTo: heading.trailingAnchor, constant: 18),
             tracks.topAnchor.constraint(equalTo: heading.bottomAnchor, constant: 25),
             tracks.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 18),
+            wordScroll.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 137),
+            wordScroll.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -18),
+            wordScroll.centerYAnchor.constraint(equalTo: tracks.arrangedSubviews[1].centerYAnchor),
+            wordScroll.heightAnchor.constraint(equalToConstant: 40),
             statusLabel.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -18),
             statusLabel.bottomAnchor.constraint(equalTo: panel.bottomAnchor, constant: -14),
         ])

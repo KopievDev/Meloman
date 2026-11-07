@@ -63,6 +63,7 @@ extension WorkspaceViewController {
               let id = UUID(uuidString: value)
         else { return }
         selectedMediaID = id
+        selectedWordID = nil
         loadSelectedMedia()
         refreshMediaList()
     }
@@ -77,6 +78,7 @@ extension WorkspaceViewController {
             playButton.isEnabled = false
             seekSlider.isEnabled = false
             inspectorInfo.stringValue = "Выберите файл в медиатеке"
+            refreshKaraoke()
             updatePlaybackUI()
             return
         }
@@ -94,6 +96,7 @@ extension WorkspaceViewController {
             "Источник сохранится внутри проекта .meloman.",
         ].joined(separator: "\n")
         timelineInfo.stringValue = "Выбран: \(selected.name)"
+        refreshKaraoke()
         updatePlaybackUI()
     }
 
@@ -162,6 +165,7 @@ extension WorkspaceViewController {
         seekSlider.doubleValue = position
         timeLabel.stringValue = "\(formatTime(safeTime)) / \(formatTime(duration))"
         playButton.title = player.rate == 0 ? "▶" : "❚❚"
+        refreshKaraokePlayhead(safeTime)
     }
 
     func formatTime(_ seconds: Double) -> String {
@@ -174,6 +178,7 @@ extension WorkspaceViewController {
         importButton.isEnabled = !isBusy
         openButton.isEnabled = !isBusy
         saveButton.isEnabled = !isBusy
+        karaokeButton.isEnabled = !isBusy && selectedMediaID != nil
     }
 
     func showError(_ message: String) {

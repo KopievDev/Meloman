@@ -14,6 +14,21 @@ final class WorkspaceViewController: NSViewController {
 
     let mediaImporter = MediaImporter()
     let player = AVPlayer()
+    let lyricStrip = KaraokeTimelineStrip()
+    let karaokeButton = NSButton(title: "Текст песни", target: nil, action: nil)
+    let lyricTextField = NSTextField(string: "")
+    let lyricStartField = NSTextField(string: "")
+    let lyricEndField = NSTextField(string: "")
+    let lyricHiddenCheck = NSButton(checkboxWithTitle: "Скрыть слово", target: nil, action: nil)
+    let lyricSelectionInfo = NSTextField(labelWithString: "Вставьте текст песни")
+    let applyLyricButton = NSButton(title: "Применить", target: nil, action: nil)
+    let prevLyricButton = NSButton(title: "◀", target: nil, action: nil)
+    let nextLyricButton = NSButton(title: "▶", target: nil, action: nil)
+    let undoLyricButton = NSButton(title: "Отменить", target: nil, action: nil)
+    let redoLyricButton = NSButton(title: "Повторить", target: nil, action: nil)
+    var selectedWordID: UUID?
+    var undoHistory: [KaraokeUndoSnapshot] = []
+    var redoHistory: [KaraokeUndoSnapshot] = []
     let mediaStack = NSStackView()
     let preview = MediaPreviewView()
     let previewHint = NSTextField(labelWithString: "Импортируйте аудио или видео")
@@ -65,6 +80,7 @@ final class WorkspaceViewController: NSViewController {
         preview.playerLayer.player = player
         view = root
         refreshMediaList()
+        refreshKaraoke()
         updatePlaybackUI()
     }
 

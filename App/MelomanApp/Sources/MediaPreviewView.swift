@@ -5,6 +5,7 @@ import AVFoundation
 @MainActor
 final class MediaPreviewView: NSView {
     let playerLayer = AVPlayerLayer()
+    let karaokeOverlay = KaraokeOverlayView()
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -26,5 +27,13 @@ final class MediaPreviewView: NSView {
         layer?.backgroundColor = NSColor.black.cgColor
         playerLayer.videoGravity = .resizeAspect
         layer?.addSublayer(playerLayer)
+        karaokeOverlay.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(karaokeOverlay)
+        NSLayoutConstraint.activate([
+            karaokeOverlay.leadingAnchor.constraint(equalTo: leadingAnchor),
+            karaokeOverlay.trailingAnchor.constraint(equalTo: trailingAnchor),
+            karaokeOverlay.topAnchor.constraint(equalTo: topAnchor),
+            karaokeOverlay.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
     }
 }
