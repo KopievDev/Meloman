@@ -11,7 +11,11 @@ extension WorkspaceViewController {
         useCleanVocals.state = .on
         useCleanVocals.toolTip = "При распознавании отделять вокал выбранной моделью"
         separationQuality.addItems(withTitles: ["Spleeter · быстрее", "RoFormer MLX · качество"])
-        separationQuality.selectItem(at: 1)
+        let executable = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Application Support/Meloman/Engines/MLX/bin/mlx-audio-separator")
+        separationQuality.selectItem(
+            at: FileManager.default.isExecutableFile(atPath: executable.path) ? 1 : 0
+        )
         separationQuality.target = self
         separationQuality.action = #selector(separationModelChanged(_:))
 
