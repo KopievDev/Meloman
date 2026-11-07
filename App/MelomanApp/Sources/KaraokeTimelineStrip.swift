@@ -29,7 +29,7 @@ final class KaraokeTimelineStrip: NSView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         NSColor.windowBackgroundColor.setFill()
-        NSRectFill(bounds)
+        NSBezierPath(rect: bounds).fill()
 
         for word in lines.flatMap(\.words) {
             let rect = rectForWord(word)
