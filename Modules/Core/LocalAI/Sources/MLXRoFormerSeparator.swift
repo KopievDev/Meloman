@@ -79,6 +79,24 @@ public final class MLXRoFormerSeparator {
             return VocalStems(vocals: vocals, instrumental: instrumental, wasCached: true)
         }
 
+        return try await generateStems(
+            executable: executable,
+            audioURL: audioURL,
+            folder: folder,
+            vocals: vocals,
+            instrumental: instrumental,
+            model: model
+        )
+    }
+
+    private func generateStems(
+        executable: URL,
+        audioURL: URL,
+        folder: URL,
+        vocals: URL,
+        instrumental: URL,
+        model: MLXRoFormerModel
+    ) async throws -> VocalStems {
         let temp = folder.appendingPathComponent(".running-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: temp, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: temp) }
