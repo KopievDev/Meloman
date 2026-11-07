@@ -49,10 +49,9 @@ extension WorkspaceViewController {
         separationQuality.isEnabled = !isBusy
     }
 
-
     @objc func separationModelChanged(_: Any?) {
         guard let id = selectedMediaID else { return }
-        stemsByMediaID.removeValue(forKey: id)
+        stemsByMediaID.removeAll()
         loadSelectedMedia()
         updateStemButtons()
     }
