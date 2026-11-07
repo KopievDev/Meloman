@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Tuist via mise
+        uses: jdx/mise-action@v4
+
+      - name: Install lint tools
+        run: brew install swiftlint swiftformat
+
+      - name: Check SwiftFormat
+        run: swiftformat --lint Project.swift Tuist.swift App Modules Tests --config Config/.swiftformat
+
+      - name: Check SwiftLint
+        run: swiftlint lint --config Config/.swiftlint.yml --strict
+
+      - name: Generate Xcode workspace
+        run: tuist generate --no-open
+
+      - name: Build and run unit tests
+        run: |
+          xcodebuild test \
+            -workspace Meloman.xcworkspace \
+            -scheme Meloman \
+            -destination 'platform=macOS' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Build unsigned Release .app
+        run: ./scripts/build.sh
+
+      - name: Upload unsigned macOS build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Meloman-macOS-unsigned
+          path: dist/Meloman-macOS-Release-unsigned.zip
+          if-no-files-found: error
+          retention-days: 7

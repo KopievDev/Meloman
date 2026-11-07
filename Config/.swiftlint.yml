@@ -1,0 +1,30 @@
+included:
+  - ../App
+  - ../Modules
+  - ../Tests
+  - ../Project.swift
+  - ../Tuist.swift
+
+# SwiftFormat manages trailing commas and intentionally keeps them.
+disabled_rules:
+  - trailing_comma
+
+excluded:
+  - ../.build
+  - ../DerivedData
+  - ../Tuist/Dependencies
+
+line_length:
+  warning: 120
+  error: 160
+
+type_body_length:
+  warning: 250
+  error: 350
+
+file_length:
+  warning: 450
+  error: 600
+
+identifier_name:
+  min_length: 2
