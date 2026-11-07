@@ -35,40 +35,40 @@ extension WorkspaceViewController {
 
     func performRecognition(mediaID: UUID, asset: MediaAsset, mediaURL: URL) async {
         var temporaryAudio: URL?
-            defer {
-                if let temporaryAudio {
-                    try? FileManager.default.removeItem(at: temporaryAudio)
-                }
-                isBusy = false
-                setBusyControls()
+        defer {
+            if let temporaryAudio {
+                try? FileManager.default.removeItem(at: temporaryAudio)
+            }
+            isBusy = false
+            setBusyControls()
+        }
+
+        do {
+            let source = try await TranscriptionAudioPreparer().prepare(
+                source: mediaURL,
+                kind: asset.kind
+            )
+            if asset.kind == .video {
+                temporaryAudio = source
             }
 
-            do {
-                let source = try await TranscriptionAudioPreparer().prepare(
-                    source: mediaURL,
-                    kind: asset.kind
-                )
-                if asset.kind == .video {
-                    temporaryAudio = source
-                }
-
-                let words = try await speechRecognizer.recognize(audioAt: source)
-                let lines = RecognizedLyricsBuilder.lines(from: words, duration: asset.duration)
-                guard !lines.isEmpty else {
-                    showError("AI не обнаружил слов с корректными таймкодами. " +
-                        "Попробуйте другой файл или ручную разметку.")
-                    return
-                }
-
-                editLyrics(lines, for: mediaID)
-                if selectedMediaID == mediaID {
-                    selectedWordID = lines.first?.words.first?.id
-                    refreshKaraoke()
-                }
-                statusLabel.stringValue = "AI: \(words.count) слов распознано. Проверьте текст и сохраните проект."
-            } catch {
-                statusLabel.stringValue = "AI: ошибка распознавания"
-                showError(error.localizedDescription)
+            let words = try await speechRecognizer.recognize(audioAt: source)
+            let lines = RecognizedLyricsBuilder.lines(from: words, duration: asset.duration)
+            guard !lines.isEmpty else {
+                showError("AI не обнаружил слов с корректными таймкодами. " +
+                    "Попробуйте другой файл или ручную разметку.")
+                return
             }
+
+            editLyrics(lines, for: mediaID)
+            if selectedMediaID == mediaID {
+                selectedWordID = lines.first?.words.first?.id
+                refreshKaraoke()
+            }
+            statusLabel.stringValue = "AI: \(words.count) слов распознано. Проверьте текст и сохраните проект."
+        } catch {
+            statusLabel.stringValue = "AI: ошибка распознавания"
+            showError(error.localizedDescription)
+        }
     }
 }
