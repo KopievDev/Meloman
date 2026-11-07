@@ -42,7 +42,8 @@ extension WorkspaceViewController {
         lyricEndField.stringValue = String(format: "%.3f", Double(word.end.microseconds) / 1_000_000)
         lyricHiddenCheck.state = word.isHidden ? .on : .off
         applyLyricButton.isEnabled = true
-        lyricSelectionInfo.stringValue = "Слово \((words.firstIndex(where: { $0.id == word.id }) ?? 0) + 1) из \(words.count)"
+        let selectedIndex = (words.firstIndex(where: { $0.id == word.id }) ?? 0) + 1
+        lyricSelectionInfo.stringValue = "Слово \(selectedIndex) из \(words.count)"
     }
 
     func refreshKaraokePlayhead(_ seconds: Double) {

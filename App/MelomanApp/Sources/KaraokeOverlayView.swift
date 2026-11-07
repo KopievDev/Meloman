@@ -38,11 +38,11 @@ final class KaraokeOverlayView: NSView {
         guard width > 0 else { return }
 
         let scale = min(1, max(0.01, (bounds.width - 36) / width))
-        let x = max(18, (bounds.width - width * scale) / 2)
-        let y = max(42, min(86, bounds.height * 0.18))
+        let originX = max(18, (bounds.width - width * scale) / 2)
+        let baselineY = max(42, min(86, bounds.height * 0.18))
 
         context.saveGState()
-        context.translateBy(x: x, y: y)
+        context.translateBy(x: originX, y: baselineY)
         context.scaleBy(x: scale, y: scale)
         context.textMatrix = .identity
         context.textPosition = .zero

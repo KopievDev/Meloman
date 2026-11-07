@@ -15,28 +15,7 @@ extension WorkspaceViewController {
         lyricHiddenCheck.title = "Скрыть слово"
         lyricHiddenCheck.state = .off
 
-        applyLyricButton.title = "Применить"
-        applyLyricButton.target = self
-        applyLyricButton.action = #selector(applyLyricWord(_:))
-        applyLyricButton.isEnabled = false
-
-        prevLyricButton.title = "◀"
-        prevLyricButton.target = self
-        prevLyricButton.action = #selector(previousLyricWord(_:))
-
-        nextLyricButton.title = "▶"
-        nextLyricButton.target = self
-        nextLyricButton.action = #selector(nextLyricWord(_:))
-
-        undoLyricButton.title = "Отменить"
-        undoLyricButton.target = self
-        undoLyricButton.action = #selector(undoLyricChange(_:))
-        undoLyricButton.isEnabled = false
-
-        redoLyricButton.title = "Повторить"
-        redoLyricButton.target = self
-        redoLyricButton.action = #selector(redoLyricChange(_:))
-        redoLyricButton.isEnabled = false
+        configureLyricButtons()
 
         let timings = NSStackView(views: [lyricStartField, lyricEndField])
         timings.spacing = 5
@@ -65,5 +44,29 @@ extension WorkspaceViewController {
             row.widthAnchor.constraint(equalTo: form.widthAnchor).isActive = true
         }
         return form
+    }
+    func configureLyricButtons() {
+        applyLyricButton.title = "Применить"
+        applyLyricButton.target = self
+        applyLyricButton.action = #selector(applyLyricWord(_:))
+        applyLyricButton.isEnabled = false
+
+        prevLyricButton.title = "◀"
+        prevLyricButton.target = self
+        prevLyricButton.action = #selector(previousLyricWord(_:))
+
+        nextLyricButton.title = "▶"
+        nextLyricButton.target = self
+        nextLyricButton.action = #selector(nextLyricWord(_:))
+
+        undoLyricButton.title = "Отменить"
+        undoLyricButton.target = self
+        undoLyricButton.action = #selector(undoLyricChange(_:))
+        undoLyricButton.isEnabled = false
+
+        redoLyricButton.title = "Повторить"
+        redoLyricButton.target = self
+        redoLyricButton.action = #selector(redoLyricChange(_:))
+        redoLyricButton.isEnabled = false
     }
 }

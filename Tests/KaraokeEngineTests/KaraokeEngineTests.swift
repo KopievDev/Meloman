@@ -59,19 +59,19 @@ final class KaraokeEngineTests: XCTestCase {
         let firstID = UUID()
         let secondID = UUID()
         let duration = try XCTUnwrap(Timecode(microseconds: 3_000_000))
-        let a = LyricsDraftBuilder.build(text: "А Б", duration: duration)
-        let b = LyricsDraftBuilder.build(text: "В Г", duration: duration)
+        let firstLyrics = LyricsDraftBuilder.build(text: "А Б", duration: duration)
+        let secondLyrics = LyricsDraftBuilder.build(text: "В Г", duration: duration)
 
         var project = MelomanProject(name: "Музыкальный вечер")
-        project.setKaraokeLines(a, for: firstID)
-        project.setKaraokeLines(b, for: secondID)
+        project.setKaraokeLines(firstLyrics, for: firstID)
+        project.setKaraokeLines(secondLyrics, for: secondID)
 
-        XCTAssertEqual(project.karaokeLines(for: firstID), a)
-        XCTAssertEqual(project.karaokeLines(for: secondID), b)
+        XCTAssertEqual(project.karaokeLines(for: firstID), firstLyrics)
+        XCTAssertEqual(project.karaokeLines(for: secondID), secondLyrics)
         let decoded = try JSONDecoder().decode(
             MelomanProject.self,
             from: JSONEncoder().encode(project)
         )
-        XCTAssertEqual(decoded.karaokeLines(for: secondID), b)
+        XCTAssertEqual(decoded.karaokeLines(for: secondID), secondLyrics)
     }
 }

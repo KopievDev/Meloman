@@ -54,11 +54,11 @@ final class KaraokeTimelineStrip: NSView {
             }
         }
 
-        let x = xPosition(playhead)
+        let cursorX = xPosition(playhead)
         NSColor.systemRed.setStroke()
         let cursor = NSBezierPath()
-        cursor.move(to: NSPoint(x: x, y: 0))
-        cursor.line(to: NSPoint(x: x, y: bounds.height))
+        cursor.move(to: NSPoint(x: cursorX, y: 0))
+        cursor.line(to: NSPoint(x: cursorX, y: bounds.height))
         cursor.lineWidth = 2
         cursor.stroke()
     }
@@ -77,8 +77,8 @@ final class KaraokeTimelineStrip: NSView {
     }
 
     private func rectForWord(_ word: LyricWord) -> NSRect {
-        let x = xPosition(word.start)
+        let startX = xPosition(word.start)
         let end = xPosition(word.end)
-        return NSRect(x: x, y: 4, width: max(1, end - x - 1), height: max(12, bounds.height - 8))
+        return NSRect(x: startX, y: 4, width: max(1, end - startX - 1), height: max(12, bounds.height - 8))
     }
 }

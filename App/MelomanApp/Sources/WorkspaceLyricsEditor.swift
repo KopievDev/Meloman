@@ -19,7 +19,8 @@ extension WorkspaceViewController {
         let old = project.karaokeLines(for: selected.id)
         let alert = NSAlert()
         alert.messageText = "Текст караоке"
-        alert.informativeText = "Вставьте текст с переносами строк. Времена будут приблизительными: поправьте слова вручную."
+        alert.informativeText = "Вставьте текст с переносами строк. " +
+            "Времена будут приблизительными: поправьте слова вручную."
         alert.addButton(withTitle: "Создать разметку")
         alert.addButton(withTitle: "Отмена")
 
