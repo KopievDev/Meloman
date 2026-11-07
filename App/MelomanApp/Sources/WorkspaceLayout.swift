@@ -95,9 +95,7 @@ extension WorkspaceViewController {
 
     func makePreview() -> NSView {
         let center = NSView()
-        let controls = NSView()
-        controls.wantsLayer = true
-        controls.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
+        let controls = makePlaybackControls()
 
         previewHint.textColor = .lightGray
         previewHint.font = .systemFont(ofSize: 17, weight: .medium)
@@ -111,6 +109,30 @@ extension WorkspaceViewController {
             previewHint.centerYAnchor.constraint(equalTo: preview.centerYAnchor),
             previewHint.widthAnchor.constraint(lessThanOrEqualTo: preview.widthAnchor, constant: -36),
         ])
+
+        for child in [preview, controls] {
+            child.translatesAutoresizingMaskIntoConstraints = false
+            center.addSubview(child)
+        }
+
+        NSLayoutConstraint.activate([
+            preview.topAnchor.constraint(equalTo: center.topAnchor),
+            preview.leadingAnchor.constraint(equalTo: center.leadingAnchor),
+            preview.trailingAnchor.constraint(equalTo: center.trailingAnchor),
+            controls.topAnchor.constraint(equalTo: preview.bottomAnchor),
+            controls.leadingAnchor.constraint(equalTo: center.leadingAnchor),
+            controls.trailingAnchor.constraint(equalTo: center.trailingAnchor),
+            controls.bottomAnchor.constraint(equalTo: center.bottomAnchor),
+            controls.heightAnchor.constraint(equalToConstant: 52),
+        ])
+
+        return center
+    }
+
+    func makePlaybackControls() -> NSView {
+        let controls = NSView()
+        controls.wantsLayer = true
+        controls.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
 
         playButton.target = self
         playButton.action = #selector(togglePlayback(_:))
@@ -136,23 +158,6 @@ extension WorkspaceViewController {
             timeLabel.trailingAnchor.constraint(equalTo: controls.trailingAnchor, constant: -12),
             timeLabel.widthAnchor.constraint(equalToConstant: 105),
         ])
-
-        for child in [preview, controls] {
-            child.translatesAutoresizingMaskIntoConstraints = false
-            center.addSubview(child)
-        }
-
-        NSLayoutConstraint.activate([
-            preview.topAnchor.constraint(equalTo: center.topAnchor),
-            preview.leadingAnchor.constraint(equalTo: center.leadingAnchor),
-            preview.trailingAnchor.constraint(equalTo: center.trailingAnchor),
-            controls.topAnchor.constraint(equalTo: preview.bottomAnchor),
-            controls.leadingAnchor.constraint(equalTo: center.leadingAnchor),
-            controls.trailingAnchor.constraint(equalTo: center.trailingAnchor),
-            controls.bottomAnchor.constraint(equalTo: center.bottomAnchor),
-            controls.heightAnchor.constraint(equalToConstant: 52),
-        ])
-
-        return center
+        return controls
     }
 }
