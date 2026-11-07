@@ -135,13 +135,25 @@ let project = Project(
                 .target(name: "KaraokeEngine"),
             ]
         ),
+        .target(
+            name: "LocalAITests",
+            destinations: .macOS,
+            product: .unitTests,
+            bundleId: "dev.kopiev.meloman.localai.tests",
+            deploymentTargets: .macOS("15.0"),
+            infoPlist: .default,
+            sources: ["Tests/LocalAITests/**"],
+            dependencies: [
+                .target(name: "LocalAI"),
+            ]
+        ),
     ],
     schemes: [
         .scheme(
             name: "Meloman",
             shared: true,
             buildAction: .buildAction(targets: ["Meloman"]),
-            testAction: .targets(["MelomanDomainTests", "ProjectStoreTests", "KaraokeEngineTests"]),
+            testAction: .targets(["MelomanDomainTests", "ProjectStoreTests", "KaraokeEngineTests", "LocalAITests"]),
             runAction: .runAction(executable: "Meloman")
         ),
     ]
