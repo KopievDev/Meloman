@@ -30,7 +30,7 @@ fi
 echo "Installing isolated MLX runtime (first run needs an internet connection)..."
 "$DEST/bin/python" -m pip install --disable-pip-version-check --upgrade pip
 "$DEST/bin/python" -m pip install --disable-pip-version-check "mlx-audio-separator==0.1.20"
-"$DEST/bin/python" -c 'import mlx; from mlx_audio_separator import Separator; print("MLX ready:", mlx.__version__)'
+"$DEST/bin/python" -c 'import mlx.core; from mlx_audio_separator import Separator; print("MLX runtime ready")'
 
 if [[ ! -x "$DEST/bin/mlx-audio-separator" ]]; then
   echo "Installation incomplete: CLI not found" >&2
