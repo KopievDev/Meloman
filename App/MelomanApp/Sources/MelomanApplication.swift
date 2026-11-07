@@ -8,6 +8,7 @@ enum MelomanApplication {
         let delegate = AppDelegate()
         application.delegate = delegate
         application.setActivationPolicy(.regular)
+        MelomanMenu.install()
         application.run()
     }
 }

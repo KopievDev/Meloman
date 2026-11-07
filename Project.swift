@@ -3,6 +3,9 @@ import ProjectDescription
 let project = Project(
     name: "Meloman",
     organizationName: "KopievDev",
+    packages: [
+        .package(url: "https://github.com/argmaxinc/argmax-oss-swift.git", .exact("1.1.1")),
+    ],
     settings: .settings(
         base: [
             "SWIFT_VERSION": "6.0",
@@ -57,6 +60,19 @@ let project = Project(
             ]
         ),
         .target(
+            name: "LocalAI",
+            destinations: .macOS,
+            product: .framework,
+            bundleId: "dev.kopiev.meloman.localai",
+            deploymentTargets: .macOS("15.0"),
+            infoPlist: .default,
+            sources: ["Modules/Core/LocalAI/Sources/**"],
+            dependencies: [
+                .target(name: "MelomanDomain"),
+                .package(product: "WhisperKit"),
+            ]
+        ),
+        .target(
             name: "Meloman",
             destinations: .macOS,
             product: .app,
@@ -76,6 +92,7 @@ let project = Project(
                 .target(name: "MediaPipeline"),
                 .target(name: "ProjectStore"),
                 .target(name: "KaraokeEngine"),
+                .target(name: "LocalAI"),
             ]
         ),
         .target(

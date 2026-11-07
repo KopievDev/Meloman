@@ -21,6 +21,7 @@ extension WorkspaceViewController {
         displaySelectedLyricWord()
 
         karaokeButton.isEnabled = mediaID != nil && !isBusy
+        recognizeButton.isEnabled = mediaID != nil && !isBusy
         undoLyricButton.isEnabled = !undoHistory.isEmpty
         redoLyricButton.isEnabled = !redoHistory.isEmpty
     }
