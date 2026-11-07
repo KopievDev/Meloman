@@ -155,5 +155,4 @@ extension WorkspaceViewController {
 
         return center
     }
-
 }

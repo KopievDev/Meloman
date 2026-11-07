@@ -3,7 +3,7 @@ import ProjectStore
 
 @MainActor
 extension WorkspaceViewController {
-    @objc func saveProject(_ sender: Any?) {
+    @objc func saveProject(_: Any?) {
         guard !isBusy else { return }
         let destination: URL
         if let existing = projectURL {
@@ -39,7 +39,7 @@ extension WorkspaceViewController {
         }
     }
 
-    @objc func openProject(_ sender: Any?) {
+    @objc func openProject(_: Any?) {
         guard !isBusy else { return }
         let panel = NSOpenPanel()
         panel.message = "Выберите папку проекта с расширением .meloman"

@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 
 @MainActor
 extension WorkspaceViewController {
-    @objc func importMedia(_ sender: Any?) {
+    @objc func importMedia(_: Any?) {
         guard !isBusy else { return }
         let panel = NSOpenPanel()
         panel.message = "Выберите музыкальные файлы или видеоклипы"
@@ -135,7 +135,7 @@ extension WorkspaceViewController {
         )
     }
 
-    @objc func togglePlayback(_ sender: Any?) {
+    @objc func togglePlayback(_: Any?) {
         guard player.currentItem != nil else { return }
         if player.rate == 0 {
             player.play()
