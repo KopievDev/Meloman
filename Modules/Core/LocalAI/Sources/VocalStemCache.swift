@@ -20,7 +20,7 @@ public enum VocalStemCache {
     }
 
     public static func directory(for key: String) throws -> URL {
-        guard key.count == 64, key.allSatisfy({ $0.isHexDigit }) else {
+        guard key.count == 64, key.allSatisfy(\.isHexDigit) else {
             throw CocoaError(.fileReadCorruptFile)
         }
         let root = try FileManager.default.url(
