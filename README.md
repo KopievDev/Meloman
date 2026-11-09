@@ -4,7 +4,7 @@
 
 See the [MVP roadmap](docs/ROADMAP.md) for product scope and planned milestones.
 
-> **Status:** PR #9 adds experimental local CTC forced alignment for **known lyrics**, with safe timing-only updates. MP4 export remains a future milestone.
+> **Status:** PR #10 introduces native MP4 karaoke export with animated progressive word highlight. Color/style editing and additional visual layers are future milestones.
 
 ## Requirements
 
@@ -23,16 +23,16 @@ mise exec -- tuist generate
 open Meloman.xcworkspace
 ```
 
-Select the **Meloman** scheme and run the app. Use **Импорт** (or drop media files) to load MP3/WAV/M4A/AIFF/MP4/MOV/M4V. Select a media item and use Play/Pause or the seek slider. Choose **Текст песни**, paste lines and click **Создать разметку**. The manual timing draft is an **even-duration approximation**. Use **AI текст** for real locally inferred word timestamps. Select a K1 word block on the timeline to seek and edit its text, start/end in seconds, or **Скрыть слово**. Press **Применить**, then **Сохранить** to persist everything to a portable `.meloman` folder. The karaoke overlay fills the actual glyphs from left to right as the media plays. The current editor is preview-only; video export follows in later PRs.
+Select the **Meloman** scheme and run the app. Use **Импорт** (or drop media files) to load MP3/WAV/M4A/AIFF/MP4/MOV/M4V. Select a media item and use Play/Pause or the seek slider. Choose **Текст песни**, paste lines and click **Создать разметку**. The manual timing draft is an **even-duration approximation**. Use **AI текст** for real locally inferred word timestamps. Select a K1 word block on the timeline to seek and edit its text, start/end in seconds, or **Скрыть слово**. Press **Применить**, then **Сохранить** to persist everything to a portable `.meloman` folder. The karaoke overlay fills the actual glyphs from left to right as the media plays. The editor now supports MP4 export of selected media with karaoke word-fill overlays.
 
 ## Build a runnable macOS app
 
-From the `feature/008-known-lyrics-alignment` branch, run:
+From the `feature/009-karaoke-mp4-export` branch, run:
 
 ```sh
 git fetch origin
-git switch --track origin/feature/008-known-lyrics-alignment
-git pull --ff-only origin feature/008-known-lyrics-alignment
+git switch --track origin/feature/009-karaoke-mp4-export
+git pull --ff-only origin feature/009-karaoke-mp4-export
 ./scripts/build.sh
 open dist/Meloman.app
 ```
@@ -234,6 +234,36 @@ full-song global alignment drift; manually inspect those sections.
 This is the *first* real acoustic alignment experiment, not a promise of
 frame-perfect karaoke. Its performance on the supplied Russian rap track must
 be verified locally because GitHub CI does **not** download the large model.
+
+## MP4 video export (PR #10)
+
+Select one imported media file, add or synchronize its karaoke words, then press
+**Экспорт MP4** in the toolbar. Pick a destination using the native macOS
+save dialog. By default, Meloman retains the original soundtrack. If you
+check **Использовать минусовку**, it uses the selected separation model's
+instrumental stem; a missing stem is generated locally and cached first.
+
+- **MP4/MOV/M4V:** preserve the imported footage and mix in animated karaoke
+  text, with video rotation from the original track. Final video is 30 fps
+  and up to 1920 pixels on the long side (1080 on the short side).
+- **MP3/M4A/WAV/AIFF:** generate a 1280×720 black-background MP4 with the
+  same karaoke and soundtrack.
+- Use AVFoundation/Core Animation for native video generation. The exported
+  yellow fill advances **within words**, not whole-line captions.
+- The renderer uses CoreText glyph offsets consistent with AppKit preview,
+  including Russian text and masked words.
+- Progress uses actual AVAssetExportSession reports. A staged temporary MP4
+  is moved into place only once export succeeds; errors do not overwrite a
+  previously exported movie.
+- Export is always based on **currently selected media** and that file's
+  saved in-memory karaoke word timing. It never reruns Whisper/CTC.
+
+**MVP limitations:** this exports the main video/audio plus the K1 karaoke
+track, not yet arbitrary background images, GIFs, titles, multiple stacked
+videos, templates, or style animation. Current karaoke styling matches the
+white/yellow preview convention. GPU rendering speed varies with input
+resolution, duration and effects. Verify actual exported motion, audio,
+orientation, and line timing on your Mac before merging PR #10.
 
 ## Tests and quality checks
 
