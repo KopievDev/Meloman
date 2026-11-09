@@ -104,8 +104,8 @@ extension WorkspaceViewController {
         mediaID: UUID,
         temporaryAudio: inout URL?
     ) async throws -> URL {
-        if let cached = stemsByMediaID[mediaID],
-           FileManager.default.fileExists(atPath: cached.instrumental.path) {
+        let cached = stemsByMediaID[mediaID]
+        if let cached, FileManager.default.fileExists(atPath: cached.instrumental.path) {
             return cached.instrumental
         }
 
