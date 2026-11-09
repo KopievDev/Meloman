@@ -160,7 +160,14 @@ public final class LyricsCTCAligner {
         process.waitUntilExit()
         try Task.checkCancellation()
 
-        guard process.terminationStatus == 0 else {
+        return try decodeProcessResult(paths: paths, exitCode: process.terminationStatus)
+    }
+
+    private func decodeProcessResult(
+        paths: CTCTemporaryPaths,
+        exitCode: Int32
+    ) throws -> AcousticLyricsAlignment {
+        guard exitCode == 0 else {
             let details = (try? String(contentsOf: paths.log, encoding: .utf8)) ?? ""
             throw LyricsCTCAlignmentError.processingFailed(String(details.suffix(500)))
         }
