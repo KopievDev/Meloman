@@ -10,35 +10,48 @@ extension WorkspaceViewController {
         inspectorInfo.lineBreakMode = .byWordWrapping
 
         let lyricsControls = makeLyricsInspectorControls()
+        let styleControls = makeKaraokeStyleControls()
         let languageTitle = label("ЯЗЫК РАСПОЗНАВАНИЯ", size: 11, color: .secondaryLabelColor)
         recognitionLanguage.addItems(withTitles: ["Авто", "Русский", "English"])
         recognitionLanguage.selectItem(at: 1)
         let separation = makeVocalControls()
 
-        for child in [title, inspectorInfo, lyricsControls, languageTitle, recognitionLanguage, separation] {
-            child.translatesAutoresizingMaskIntoConstraints = false
-            panel.addSubview(child)
+        let column = NSStackView(views: [
+            title, inspectorInfo, lyricsControls, styleControls,
+            languageTitle, recognitionLanguage, separation,
+        ])
+        column.orientation = .vertical
+        column.alignment = .leading
+        column.spacing = 15
+        for view in [inspectorInfo, lyricsControls, styleControls, recognitionLanguage, separation] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            view.widthAnchor.constraint(equalTo: column.widthAnchor).isActive = true
         }
 
-        NSLayoutConstraint.activate([
-            title.topAnchor.constraint(equalTo: panel.topAnchor, constant: 18),
-            title.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 17),
-            inspectorInfo.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 18),
-            inspectorInfo.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 17),
-            inspectorInfo.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -17),
-            lyricsControls.topAnchor.constraint(equalTo: inspectorInfo.bottomAnchor, constant: 16),
-            lyricsControls.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 17),
-            lyricsControls.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -17),
-            languageTitle.topAnchor.constraint(equalTo: lyricsControls.bottomAnchor, constant: 16),
-            languageTitle.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 17),
-            recognitionLanguage.topAnchor.constraint(equalTo: languageTitle.bottomAnchor, constant: 5),
-            recognitionLanguage.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 17),
-            recognitionLanguage.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -17),
-            separation.topAnchor.constraint(equalTo: recognitionLanguage.bottomAnchor, constant: 14),
-            separation.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 17),
-            separation.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -17),
-        ])
+        let container = NSView()
+        container.addSubview(column)
+        column.translatesAutoresizingMaskIntoConstraints = false
 
+        let scroll = NSScrollView()
+        scroll.hasVerticalScroller = true
+        scroll.drawsBackground = false
+        scroll.documentView = container
+        container.translatesAutoresizingMaskIntoConstraints = false
+
+        panel.addSubview(scroll)
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            scroll.topAnchor.constraint(equalTo: panel.topAnchor),
+            scroll.bottomAnchor.constraint(equalTo: panel.bottomAnchor),
+            scroll.leadingAnchor.constraint(equalTo: panel.leadingAnchor),
+            scroll.trailingAnchor.constraint(equalTo: panel.trailingAnchor),
+
+            container.widthAnchor.constraint(equalTo: scroll.contentView.widthAnchor),
+            column.topAnchor.constraint(equalTo: container.topAnchor, constant: 18),
+            column.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -20),
+            column.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            column.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+        ])
         return panel
     }
 
