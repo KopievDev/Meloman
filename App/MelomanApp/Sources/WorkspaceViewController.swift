@@ -27,6 +27,8 @@ final class WorkspaceViewController: NSViewController {
     let playInstrumentalButton = NSButton(title: "Минус", target: nil, action: nil)
     let playOriginalButton = NSButton(title: "Оригинал", target: nil, action: nil)
     let recognizeButton = NSButton(title: "AI текст", target: nil, action: nil)
+    let exportButton = NSButton(title: "Экспорт MP4", target: nil, action: nil)
+    let movieExporter = KaraokeMovieExporter()
     let recognitionLanguage = NSPopUpButton(frame: .zero, pullsDown: false)
     private var didStartModel = false
     let aiProgressPanel = NSView()

@@ -181,6 +181,9 @@ extension WorkspaceViewController {
         saveButton.isEnabled = !isBusy
         karaokeButton.isEnabled = !isBusy && selectedMediaID != nil
         recognizeButton.isEnabled = !isBusy && selectedMediaID != nil
+        exportButton.isEnabled = !isBusy && selectedMediaID.map {
+            !project.karaokeLines(for: $0).isEmpty
+        } == true
         updateStemButtons()
     }
 

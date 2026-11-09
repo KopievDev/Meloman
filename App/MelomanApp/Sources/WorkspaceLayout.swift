@@ -29,11 +29,12 @@ extension WorkspaceViewController {
         recognizeButton.action = #selector(recognizeLyrics(_:))
         recognizeButton.toolTip = "Распознать песню локальной моделью Whisper"
         recognizeButton.isEnabled = false
-        let export = NSButton(title: "Экспорт", target: nil, action: nil)
-        export.isEnabled = false
-        export.toolTip = "Экспорт MP4 появится позднее"
+        exportButton.target = self
+        exportButton.action = #selector(exportKaraokeVideo(_:))
+        exportButton.isEnabled = false
+        exportButton.toolTip = "Сохранить готовое караоке-видео со звуком в MP4"
 
-        let buttons = NSStackView(views: [importButton, openButton, saveButton, karaokeButton, recognizeButton, export])
+        let buttons = NSStackView(views: [importButton, openButton, saveButton, karaokeButton, recognizeButton, exportButton])
         buttons.spacing = 8
 
         for child in [identity, buttons] {

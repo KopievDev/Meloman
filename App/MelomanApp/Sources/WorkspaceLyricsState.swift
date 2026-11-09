@@ -22,6 +22,7 @@ extension WorkspaceViewController {
 
         karaokeButton.isEnabled = mediaID != nil && !isBusy
         recognizeButton.isEnabled = mediaID != nil && !isBusy
+        exportButton.isEnabled = !isBusy && !lyrics.isEmpty
         undoLyricButton.isEnabled = !undoHistory.isEmpty
         redoLyricButton.isEnabled = !redoHistory.isEmpty
         updateStemButtons()
