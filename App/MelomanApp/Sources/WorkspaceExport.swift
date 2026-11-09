@@ -41,7 +41,6 @@ extension WorkspaceViewController {
             await self?.performKaraokeExport(
                 asset: asset,
                 source: source,
-                mediaID: id,
                 lyrics: lyrics,
                 instrumental: instrumentalCheck.state == .on,
                 destination: output
@@ -52,7 +51,6 @@ extension WorkspaceViewController {
     func performKaraokeExport(
         asset: MediaAsset,
         source: URL,
-        mediaID: UUID,
         lyrics: [LyricLine],
         instrumental: Bool,
         destination: URL
@@ -71,7 +69,7 @@ extension WorkspaceViewController {
                 try await prepareInstrumental(
                     asset: asset,
                     source: source,
-                    mediaID: mediaID,
+                    mediaID: asset.id,
                     temporaryAudio: &temporaryAudio
                 )
             } else {
@@ -83,8 +81,7 @@ extension WorkspaceViewController {
             }
             try await movieExporter.export(
                 source: source,
-                kind: asset.kind,
-                duration: asset.duration,
+                media: asset,
                 lyrics: lyrics,
                 instrumental: audioURL,
                 to: destination
@@ -107,10 +104,9 @@ extension WorkspaceViewController {
         mediaID: UUID,
         temporaryAudio: inout URL?
     ) async throws -> URL {
-        if let stems = stemsByMediaID[mediaID],
-           FileManager.default.fileExists(atPath: stems.instrumental.path)
-        {
-            return stems.instrumental
+        if let cached = stemsByMediaID[mediaID],
+           FileManager.default.fileExists(atPath: cached.instrumental.path) {
+            return cached.instrumental
         }
 
         let prepared = try await TranscriptionAudioPreparer().prepare(

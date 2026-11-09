@@ -37,15 +37,14 @@ final class KaraokeMovieExporter {
 
     func export(
         source: URL,
-        kind: MediaKind,
-        duration: Timecode,
+        media: MediaAsset,
         lyrics: [LyricLine],
         instrumental: URL?,
         to destination: URL
     ) async throws {
-        let seconds = Double(duration.microseconds) / 1_000_000
+        let seconds = Double(media.duration.microseconds) / 1_000_000
         guard seconds.isFinite, seconds > 0 else { throw KaraokeVideoExportError.invalidDuration }
-        let mediaDuration = CMTime(value: duration.microseconds, timescale: 1_000_000)
+        let mediaDuration = CMTime(value: media.duration.microseconds, timescale: 1_000_000)
         let working = FileManager.default.temporaryDirectory.appendingPathComponent(
             "meloman-export-\(UUID().uuidString)",
             isDirectory: true
@@ -54,7 +53,7 @@ final class KaraokeMovieExporter {
         defer { try? FileManager.default.removeItem(at: working) }
 
         let videoURL: URL
-        if kind == .audio {
+        if media.kind == .audio {
             onProgress?("Подготовка видео", "Создание чёрного фона для аудиотрека", nil)
             videoURL = try await KaraokeBackgroundMovie.make(
                 duration: mediaDuration,

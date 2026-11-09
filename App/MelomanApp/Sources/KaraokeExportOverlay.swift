@@ -65,25 +65,24 @@ enum KaraokeExportOverlay {
 
         addWordHighlights(
             to: root,
-            words: cue.line.words,
+            cue: cue,
             visible: values,
             measured: ctLine,
-            fullText: text,
-            font: font,
-            height: height
+            font: font
         )
         return root
     }
 
     private static func addWordHighlights(
         to root: CALayer,
-        words: [LyricWord],
+        cue: KaraokeExportCue,
         visible: [String],
         measured: CTLine,
-        fullText: String,
-        font: CTFont,
-        height: CGFloat
+        font: CTFont
     ) {
+        let fullText = visible.joined(separator: " ")
+        let height = root.bounds.height
+        let words = cue.line.words
         var offset = 0
         for (index, word) in words.enumerated() {
             let start = CTLineGetOffsetForStringIndex(measured, offset, nil)
