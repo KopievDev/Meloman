@@ -6,19 +6,16 @@ import XCTest
 final class LyricsAlignmentApplierTests: XCTestCase {
     func testCorrectReferenceTextIsPreservedIncludingSlangAndLineBreaks() throws {
         let duration = try XCTUnwrap(Timecode(microseconds: 12_000_000))
-        let words = [
-            try XCTUnwrap(LyricWord(
-                text: "Эй,",
-                start: .zero,
-                end: try XCTUnwrap(Timecode(microseconds: 1_000_000))
-            )),
-            try XCTUnwrap(LyricWord(
-                text: "пацаны!",
-                start: try XCTUnwrap(Timecode(microseconds: 1_000_000)),
-                end: try XCTUnwrap(Timecode(microseconds: 2_000_000)),
-                isHidden: true
-            )),
-        ]
+        let oneSecond = try XCTUnwrap(Timecode(microseconds: 1_000_000))
+        let twoSeconds = try XCTUnwrap(Timecode(microseconds: 2_000_000))
+        let first = try XCTUnwrap(LyricWord(text: "Эй,", start: .zero, end: oneSecond))
+        let second = try XCTUnwrap(LyricWord(
+            text: "пацаны!",
+            start: oneSecond,
+            end: twoSeconds,
+            isHidden: true
+        ))
+        let words = [first, second]
         let line = LyricLine(words: words)
         let alignment = AcousticLyricsAlignment(aligned: [
             AcousticWordTiming(
@@ -57,11 +54,8 @@ final class LyricsAlignmentApplierTests: XCTestCase {
     }
 
     func testOlderProjectDecodesWithoutAlignmentMetadata() throws {
-        let value = try XCTUnwrap(LyricWord(
-            text: "Снова",
-            start: .zero,
-            end: try XCTUnwrap(Timecode(microseconds: 1_000_000))
-        ))
+        let oneSecond = try XCTUnwrap(Timecode(microseconds: 1_000_000))
+        let value = try XCTUnwrap(LyricWord(text: "Снова", start: .zero, end: oneSecond))
         let current = try JSONEncoder().encode(value)
         let raw = try XCTUnwrap(String(data: current, encoding: .utf8))
         let older = raw.replacingOccurrences(of: "\"alignmentConfidence\":null,", with: "")
