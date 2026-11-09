@@ -18,6 +18,38 @@ public enum MLXRoFormerError: LocalizedError {
     }
 }
 
+/// MLX 0.1.20 supports both model names via its built-in model resolver.
+/// A cache revision is part of the asset identity, preventing cross-model reuse.
+public enum MLXRoFormerModel: String, Sendable {
+    case zfTurbo
+    case bsRoFormer
+
+    public var modelFileName: String {
+        switch self {
+        case .zfTurbo:
+            "mel-roformer-zfturbo-vocals-v1-mlx"
+        case .bsRoFormer:
+            "model_bs_roformer_ep_317_sdr_12.9755.ckpt"
+        }
+    }
+
+    public var cacheRevision: String {
+        switch self {
+        case .zfTurbo:
+            "mlx-roformer-zfturbo-v1-0.1.20"
+        case .bsRoFormer:
+            "mlx-bs-roformer-ep317-0.1.20"
+        }
+    }
+
+    public var displayName: String {
+        switch self {
+        case .zfTurbo: "Mel-Band RoFormer"
+        case .bsRoFormer: "BS-RoFormer"
+        }
+    }
+}
+
 /// Optional high-quality engine. Calls a private local MLX executable; no cloud ASR.
 @MainActor
 public final class MLXRoFormerSeparator {
@@ -27,40 +59,62 @@ public final class MLXRoFormerSeparator {
 
     public init() {}
 
-    public func separate(audioURL: URL, originalURL: URL) async throws -> VocalStems {
+    public func separate(
+        audioURL: URL,
+        originalURL: URL,
+        model: MLXRoFormerModel = .zfTurbo
+    ) async throws -> VocalStems {
         let executable = try engineExecutable()
         let key = try await VocalStemCache.key(for: originalURL)
-        let folder = try VocalStemCache.directory(for: key, revision: Self.modelRevision)
+        let folder = try VocalStemCache.directory(for: key, revision: model.cacheRevision)
         let vocals = folder.appendingPathComponent("vocals.wav")
         let instrumental = folder.appendingPathComponent("instrumental.wav")
 
         if VocalStemCache.isValid(vocals), VocalStemCache.isValid(instrumental) {
             onProgress?(AIProcessingUpdate(
-                title: "RoFormer: готово",
+                title: "\(model.displayName): готово",
                 detail: "Дорожки взяты из локального кеша",
                 isActive: false
             ))
             return VocalStems(vocals: vocals, instrumental: instrumental, wasCached: true)
         }
 
+        return try await generateStems(
+            executable: executable,
+            audioURL: audioURL,
+            folder: folder,
+            model: model
+        )
+    }
+
+    private func generateStems(
+        executable: URL,
+        audioURL: URL,
+        folder: URL,
+        model: MLXRoFormerModel
+    ) async throws -> VocalStems {
+        let vocals = folder.appendingPathComponent("vocals.wav")
+        let instrumental = folder.appendingPathComponent("instrumental.wav")
         let temp = folder.appendingPathComponent(".running-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: temp, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: temp) }
 
         onProgress?(AIProcessingUpdate(
-            title: "RoFormer · MLX",
-            detail: "Загрузка модели или обработка песни на Mac (без процента)"
+            title: "\(model.displayName) · MLX",
+            detail: "Загрузка весов или обработка песни на Mac (без процента)"
         ))
 
         let input = audioURL
         let output = temp
         let modelFolder = try cacheModelsDirectory()
+        let modelName = model.modelFileName
         let result = try await Task.detached(priority: .userInitiated) {
             try Self.run(
                 executable: executable,
                 audio: input,
                 output: output,
-                models: modelFolder
+                models: modelFolder,
+                modelName: modelName
             )
         }.value
 
@@ -80,8 +134,8 @@ public final class MLXRoFormerSeparator {
         try FileManager.default.moveItem(at: stageInstrumental, to: instrumental)
 
         onProgress?(AIProcessingUpdate(
-            title: "RoFormer: готово",
-            detail: "Вокал и минусовка сохранены отдельно от Spleeter",
+            title: "\(model.displayName): готово",
+            detail: "Вокал и минусовка сохранены в собственном кеше",
             isActive: false
         ))
         return VocalStems(vocals: vocals, instrumental: instrumental, wasCached: false)
@@ -118,13 +172,14 @@ public final class MLXRoFormerSeparator {
         executable: URL,
         audio: URL,
         output: URL,
-        models: URL
+        models: URL,
+        modelName: String
     ) throws -> (exitCode: Int32, output: String) {
         let process = Process()
         process.executableURL = executable
         process.arguments = [
             audio.path,
-            "--model_filename", "mel-roformer-zfturbo-vocals-v1-mlx",
+            "--model_filename", modelName,
             "--output_format", "WAV",
             "--output_dir", output.path,
             "--model_file_dir", models.path,

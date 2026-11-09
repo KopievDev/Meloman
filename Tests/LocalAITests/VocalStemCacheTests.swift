@@ -32,6 +32,20 @@ final class VocalStemCacheTests: XCTestCase {
         XCTAssertTrue(mlx.path.contains("mlx-roformer-zfturbo-v1-0.1.20"))
     }
 
+    func testRoFormerProfilesHaveSeparateModelAndCacheRevisions() throws {
+        let lightweight = MLXRoFormerModel.zfTurbo
+        let quality = MLXRoFormerModel.bsRoFormer
+
+        XCTAssertEqual(lightweight.modelFileName, "mel-roformer-zfturbo-vocals-v1-mlx")
+        XCTAssertEqual(quality.modelFileName, "model_bs_roformer_ep_317_sdr_12.9755.ckpt")
+        XCTAssertNotEqual(lightweight.cacheRevision, quality.cacheRevision)
+
+        let digest = String(repeating: "b", count: 64)
+        let path1 = try VocalStemCache.directory(for: digest, revision: lightweight.cacheRevision)
+        let path2 = try VocalStemCache.directory(for: digest, revision: quality.cacheRevision)
+        XCTAssertNotEqual(path1, path2)
+    }
+
     func testAbsentStemIsNeverAcceptedAsCacheHit() {
         let missing = FileManager.default.temporaryDirectory
             .appendingPathComponent("not-present-\(UUID().uuidString).wav")

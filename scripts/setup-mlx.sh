@@ -6,6 +6,14 @@ if [[ "$(uname -s)" != "Darwin" || "$(uname -m)" != "arm64" ]]; then
   exit 1
 fi
 
+QUALITY=false
+if [[ "${1:-}" == "--quality" ]]; then
+  QUALITY=true
+elif [[ $# -gt 0 ]]; then
+  echo "Usage: ./scripts/setup-mlx.sh [--quality]" >&2
+  exit 2
+fi
+
 PYTHON=""
 for candidate in python3.12 python3.13 python3.11 python3.10 python3; do
   if command -v "$candidate" >/dev/null 2>&1; then
@@ -29,7 +37,12 @@ fi
 
 echo "Installing isolated MLX runtime (first run needs an internet connection)..."
 "$DEST/bin/python" -m pip install --disable-pip-version-check --upgrade pip
-"$DEST/bin/python" -m pip install --disable-pip-version-check "mlx-audio-separator==0.1.20"
+if [[ "$QUALITY" == true ]]; then
+  echo "Installing extra checkpoint-conversion dependencies for BS-RoFormer..."
+  "$DEST/bin/python" -m pip install --disable-pip-version-check "mlx-audio-separator[convert]==0.1.20"
+else
+  "$DEST/bin/python" -m pip install --disable-pip-version-check "mlx-audio-separator==0.1.20"
+fi
 "$DEST/bin/python" -c 'import mlx.core; from mlx_audio_separator import Separator; print("MLX runtime ready")'
 
 if [[ ! -x "$DEST/bin/mlx-audio-separator" ]]; then
@@ -38,4 +51,8 @@ if [[ ! -x "$DEST/bin/mlx-audio-separator" ]]; then
 fi
 
 echo "MLX engine installed: $DEST/bin/mlx-audio-separator"
-echo "Open Meloman and select: RoFormer MLX · качество"
+if [[ "$QUALITY" == true ]]; then
+  echo "Optional BS-RoFormer dependencies ready. Select BS-RoFormer in Meloman."
+else
+  echo "Mel-Band RoFormer ready. For BS-RoFormer, rerun: ./scripts/setup-mlx.sh --quality"
+fi

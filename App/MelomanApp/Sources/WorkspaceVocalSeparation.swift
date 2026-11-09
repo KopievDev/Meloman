@@ -10,7 +10,11 @@ extension WorkspaceViewController {
         let title = label("РАЗДЕЛЕНИЕ ВОКАЛА", size: 11, weight: .semibold, color: .secondaryLabelColor)
         useCleanVocals.state = .on
         useCleanVocals.toolTip = "При распознавании отделять вокал выбранной моделью"
-        separationQuality.addItems(withTitles: ["Spleeter · быстрее", "RoFormer MLX · качество"])
+        separationQuality.addItems(withTitles: [
+            "Spleeter · быстрее",
+            "Mel-Band RoFormer · качество",
+            "BS-RoFormer · эксперимент",
+        ])
         let executable = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support/Meloman/Engines/MLX/bin/mlx-audio-separator")
         separationQuality.selectItem(
@@ -61,10 +65,22 @@ extension WorkspaceViewController {
     }
 
     func separateAudio(audioURL: URL, originalURL: URL) async throws -> VocalStems {
-        if separationQuality.indexOfSelectedItem == 1 {
-            return try await roFormerSeparator.separate(audioURL: audioURL, originalURL: originalURL)
+        switch separationQuality.indexOfSelectedItem {
+        case 1:
+            try await roFormerSeparator.separate(
+                audioURL: audioURL,
+                originalURL: originalURL,
+                model: .zfTurbo
+            )
+        case 2:
+            try await roFormerSeparator.separate(
+                audioURL: audioURL,
+                originalURL: originalURL,
+                model: .bsRoFormer
+            )
+        default:
+            try await vocalSeparator.separate(audioURL: audioURL, originalURL: originalURL)
         }
-        return try await vocalSeparator.separate(audioURL: audioURL, originalURL: originalURL)
     }
 
     @objc func separateCurrentVocals(_: Any?) {
