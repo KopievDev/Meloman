@@ -38,11 +38,25 @@ private struct CTCProgress: Decodable {
 private struct CTCTemporaryPaths {
     let root: URL
 
-    var waveform: URL { root.appendingPathComponent("audio.wav") }
-    var reference: URL { root.appendingPathComponent("reference.json") }
-    var output: URL { root.appendingPathComponent("output.json") }
-    var progress: URL { root.appendingPathComponent("progress.json") }
-    var log: URL { root.appendingPathComponent("logs.txt") }
+    var waveform: URL {
+        root.appendingPathComponent("audio.wav")
+    }
+
+    var reference: URL {
+        root.appendingPathComponent("reference.json")
+    }
+
+    var output: URL {
+        root.appendingPathComponent("output.json")
+    }
+
+    var progress: URL {
+        root.appendingPathComponent("progress.json")
+    }
+
+    var log: URL {
+        root.appendingPathComponent("logs.txt")
+    }
 }
 
 /// Optional local aligner: accepts known lyrics and returns times, never invented text.
