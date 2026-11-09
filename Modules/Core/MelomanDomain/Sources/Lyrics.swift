@@ -6,13 +6,17 @@ public struct LyricWord: Codable, Equatable, Identifiable, Sendable {
     public var start: Timecode
     public var end: Timecode
     public var isHidden: Bool
+    /// A quality hint from the audio alignment engine, not a calibrated probability.
+    /// Nil means no automatic acoustic alignment was applied.
+    public var alignmentConfidence: Double?
 
     public init?(
         id: UUID = UUID(),
         text: String,
         start: Timecode,
         end: Timecode,
-        isHidden: Bool = false
+        isHidden: Bool = false,
+        alignmentConfidence: Double? = nil
     ) {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, start < end else {
             return nil
@@ -22,6 +26,7 @@ public struct LyricWord: Codable, Equatable, Identifiable, Sendable {
         self.start = start
         self.end = end
         self.isHidden = isHidden
+        self.alignmentConfidence = alignmentConfidence
     }
 }
 

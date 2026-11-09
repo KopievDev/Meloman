@@ -4,7 +4,7 @@
 
 See the [MVP roadmap](docs/ROADMAP.md) for product scope and planned milestones.
 
-> **Status:** PR #8 adds an experimental BS-RoFormer model option for cleaner vocal separation, alongside Spleeter and Mel-Band RoFormer. Known-lyrics alignment and export remain future milestones.
+> **Status:** PR #9 adds experimental local CTC forced alignment for **known lyrics**, with safe timing-only updates. MP4 export remains a future milestone.
 
 ## Requirements
 
@@ -27,12 +27,12 @@ Select the **Meloman** scheme and run the app. Use **Импорт** (or drop med
 
 ## Build a runnable macOS app
 
-From the `feature/007-bs-roformer-quality` branch, run:
+From the `feature/008-known-lyrics-alignment` branch, run:
 
 ```sh
 git fetch origin
-git switch --track origin/feature/007-bs-roformer-quality
-git pull --ff-only origin feature/007-bs-roformer-quality
+git switch --track origin/feature/008-known-lyrics-alignment
+git pull --ff-only origin feature/008-known-lyrics-alignment
 ./scripts/build.sh
 open dist/Meloman.app
 ```
@@ -187,6 +187,53 @@ integrated into that released package and are intentionally not used here.
 **Distribution caveat:** the BS checkpoint license must be reviewed before
 shipping the trained weights in a public installer; this PR only supports
 the user's local opt-in download.
+
+## Known-lyrics synchronization (PR #9)
+
+**Recommended for Russian rap and songs with unusual wording:** Paste the
+**correct** lyrics into **Текст песни** (replace any incorrect Whisper output),
+then click **Синхронизировать текст** under **Разделение вокала**. The app
+keeps **every original word, spelling, punctuation, line break, and hidden-word
+setting**; only the word start/end timestamps change.
+
+Install an optional local multilingual **music-specific CTC forced aligner**
+before the first use:
+
+```sh
+./scripts/setup-aligner.sh
+./scripts/build.sh --run
+```
+
+This creates a private Python venv at
+`~/Library/Application Support/Meloman/Engines/LyricsAligner` and installs
+pinned PyTorch / Transformers dependencies. The first synchronization
+downloads the [`mrfakename/w2v-bert-2.0-music-lyrics-ctc`](https://huggingface.co/mrfakename/w2v-bert-2.0-music-lyrics-ctc)
+multilingual music model (about **2.5 GB** of FP32 weights; extra cache
+and runtime memory required) into
+`~/Library/Application Support/Meloman/Models/LyricsCTC`. A Mac with
+Apple Silicon and sufficient free disk space/RAM is required. Subsequent
+inference can run offline. The lyrics/audio are processed on-device, not
+uploaded to a transcription server. Weights have an MIT model-card license,
+subject to reviewing the original model lineage before redistribution.
+
+The acoustic model runs on the selected original or separated vocal track
+(**Чистый вокал для AI**, currently BS-RoFormer is best for the test song).
+It computes 24-second time windows with two seconds of context and aligns
+the **exact pasted text** using CTC Viterbi. It reports true progress during
+window inference and leaves the UI responsive.
+
+**Quality warnings:** CTC word start estimates are more dependable than word
+end estimates; the latter use a conservative approximate tail. Unknown
+characters and low-confidence regions may remain imperfect. Unmatched words
+retain their previous timing, and low-confidence blocks appear **orange** in
+the K1 timeline. If too many words have weak timing evidence, the application
+asks for confirmation before applying anything. All changes remain undoable.
+Repeated choruses, skipped lyrics and extra ad-libs can still make a
+full-song global alignment drift; manually inspect those sections.
+
+This is the *first* real acoustic alignment experiment, not a promise of
+frame-perfect karaoke. Its performance on the supplied Russian rap track must
+be verified locally because GitHub CI does **not** download the large model.
 
 ## Tests and quality checks
 

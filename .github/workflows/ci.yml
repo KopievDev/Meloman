@@ -32,6 +32,9 @@ jobs:
       - name: Generate Xcode workspace
         run: tuist generate --no-open
 
+      - name: Validate CTC Python source
+        run: python3 -m py_compile App/MelomanApp/Resources/lyrics_ctc_align.py
+
       - name: Build and run unit tests
         run: |
           xcodebuild test \

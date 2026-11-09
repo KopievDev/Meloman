@@ -15,6 +15,8 @@ final class WorkspaceViewController: NSViewController {
 
     let mediaImporter = MediaImporter()
     let speechRecognizer = WhisperSpeechRecognizer()
+    let lyricsCTCAligner = LyricsCTCAligner()
+    let syncLyricsButton = NSButton(title: "Синхронизировать текст", target: nil, action: nil)
     let vocalSeparator = VocalSeparator()
     let roFormerSeparator = MLXRoFormerSeparator()
     let separationQuality = NSPopUpButton(frame: .zero, pullsDown: false)
@@ -112,6 +114,9 @@ final class WorkspaceViewController: NSViewController {
         if !didStartModel {
             didStartModel = true
             speechRecognizer.onProgress = { [weak self] update in
+                self?.displayModelProgress(update)
+            }
+            lyricsCTCAligner.onProgress = { [weak self] update in
                 self?.displayModelProgress(update)
             }
             vocalSeparator.onProgress = { [weak self] update in

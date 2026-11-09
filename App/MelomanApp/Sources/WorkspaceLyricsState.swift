@@ -24,6 +24,7 @@ extension WorkspaceViewController {
         recognizeButton.isEnabled = mediaID != nil && !isBusy
         undoLyricButton.isEnabled = !undoHistory.isEmpty
         redoLyricButton.isEnabled = !redoHistory.isEmpty
+        updateStemButtons()
     }
 
     func displaySelectedLyricWord() {

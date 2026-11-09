@@ -89,6 +89,7 @@ let project = Project(
                 ]
             ),
             sources: ["App/MelomanApp/Sources/**"],
+            resources: ["App/MelomanApp/Resources/**"],
             dependencies: [
                 .target(name: "MelomanDomain"),
                 .target(name: "MediaPipeline"),
