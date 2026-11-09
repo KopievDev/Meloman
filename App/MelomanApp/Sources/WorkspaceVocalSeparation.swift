@@ -23,6 +23,10 @@ extension WorkspaceViewController {
         separationQuality.target = self
         separationQuality.action = #selector(separationModelChanged(_:))
 
+        syncLyricsButton.target = self
+        syncLyricsButton.action = #selector(synchronizeKnownLyrics(_:))
+        syncLyricsButton.toolTip = "Синхронизировать правильный текст с аудио, не изменяя слова"
+
         separateButton.target = self
         separateButton.action = #selector(separateCurrentVocals(_:))
         playVocalsButton.target = self
@@ -35,11 +39,13 @@ extension WorkspaceViewController {
         let playback = NSStackView(views: [playVocalsButton, playInstrumentalButton, playOriginalButton])
         playback.distribution = .fillEqually
         playback.spacing = 3
-        let stack = NSStackView(views: [title, separationQuality, useCleanVocals, separateButton, playback])
+        let stack = NSStackView(views: [
+            title, separationQuality, useCleanVocals, separateButton, syncLyricsButton, playback,
+        ])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 7
-        for view in [separationQuality, separateButton, playback] {
+        for view in [separationQuality, separateButton, syncLyricsButton, playback] {
             view.translatesAutoresizingMaskIntoConstraints = false
             view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         }
@@ -49,6 +55,9 @@ extension WorkspaceViewController {
 
     func updateStemButtons() {
         separateButton.isEnabled = !isBusy && selectedMediaID != nil
+        syncLyricsButton.isEnabled = !isBusy && selectedMediaID.map {
+            !project.karaokeLines(for: $0).isEmpty
+        } == true
         let available = !isBusy && selectedMediaID.flatMap { stemsByMediaID[$0] } != nil
         playVocalsButton.isEnabled = available
         playInstrumentalButton.isEnabled = available
