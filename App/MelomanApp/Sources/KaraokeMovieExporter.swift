@@ -126,8 +126,8 @@ final class KaraokeMovieExporter {
         }
 
         let scale = min(1, 1920 / max(width, height), 1080 / min(width, height))
-        let renderWidth = max(2, (floor(width * scale / 2) * 2))
-        let renderHeight = max(2, (floor(height * scale / 2) * 2))
+        let renderWidth = max(2, floor(width * scale / 2) * 2)
+        let renderHeight = max(2, floor(height * scale / 2) * 2)
         let normalized = transform
             .concatenating(CGAffineTransform(translationX: -transformed.minX, y: -transformed.minY))
             .concatenating(CGAffineTransform(scaleX: renderWidth / width, y: renderHeight / height))

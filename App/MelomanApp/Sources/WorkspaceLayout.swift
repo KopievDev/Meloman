@@ -34,7 +34,9 @@ extension WorkspaceViewController {
         exportButton.isEnabled = false
         exportButton.toolTip = "Сохранить готовое караоке-видео со звуком в MP4"
 
-        let buttons = NSStackView(views: [importButton, openButton, saveButton, karaokeButton, recognizeButton, exportButton])
+        let buttons = NSStackView(views: [
+            importButton, openButton, saveButton, karaokeButton, recognizeButton, exportButton,
+        ])
         buttons.spacing = 8
 
         for child in [identity, buttons] {

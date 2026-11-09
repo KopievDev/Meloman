@@ -67,16 +67,15 @@ extension WorkspaceViewController {
         }
 
         do {
-            let audioURL: URL?
-            if instrumental {
-                audioURL = try await prepareInstrumental(
+            let audioURL: URL? = if instrumental {
+                try await prepareInstrumental(
                     asset: asset,
                     source: source,
                     mediaID: mediaID,
                     temporaryAudio: &temporaryAudio
                 )
             } else {
-                audioURL = nil
+                nil
             }
 
             movieExporter.onProgress = { [weak self] title, detail, fraction in
@@ -109,7 +108,8 @@ extension WorkspaceViewController {
         temporaryAudio: inout URL?
     ) async throws -> URL {
         if let stems = stemsByMediaID[mediaID],
-           FileManager.default.fileExists(atPath: stems.instrumental.path) {
+           FileManager.default.fileExists(atPath: stems.instrumental.path)
+        {
             return stems.instrumental
         }
 
