@@ -35,13 +35,12 @@ final class KaraokeTimelineStrip: NSView {
             let rect = rectForWord(word)
             guard rect.intersects(dirtyRect), rect.width > 0 else { continue }
             let selected = word.id == selectedWordID
-            let fill: NSColor
-            if selected {
-                fill = .systemYellow
+            let fill: NSColor = if selected {
+                .systemYellow
             } else if let confidence = word.alignmentConfidence, confidence < 0.25 {
-                fill = NSColor.systemOrange.withAlphaComponent(0.75)
+                NSColor.systemOrange.withAlphaComponent(0.75)
             } else {
-                fill = NSColor.systemTeal.withAlphaComponent(0.65)
+                NSColor.systemTeal.withAlphaComponent(0.65)
             }
             fill.setFill()
             NSBezierPath(roundedRect: rect, xRadius: 4, yRadius: 4).fill()
