@@ -35,6 +35,16 @@ private struct CTCProgress: Decodable {
     let fraction: Double?
 }
 
+private struct CTCTemporaryPaths {
+    let root: URL
+
+    var waveform: URL { root.appendingPathComponent("audio.wav") }
+    var reference: URL { root.appendingPathComponent("reference.json") }
+    var output: URL { root.appendingPathComponent("output.json") }
+    var progress: URL { root.appendingPathComponent("progress.json") }
+    var log: URL { root.appendingPathComponent("logs.txt") }
+}
+
 /// Optional local aligner: accepts known lyrics and returns times, never invented text.
 /// The CTC subprocess runs separately from the AppKit event loop.
 @MainActor
@@ -52,35 +62,56 @@ public final class LyricsCTCAligner {
             throw LyricsCTCAlignmentError.resourceUnavailable
         }
 
-        let temp = FileManager.default.temporaryDirectory.appendingPathComponent(
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(
             "meloman-ctc-\(UUID().uuidString)",
             isDirectory: true
         )
-        try FileManager.default.createDirectory(at: temp, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: temp) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        return try await prepareAndAlign(
+            audioURL: audioURL,
+            lines: lines,
+            paths: CTCTemporaryPaths(root: root),
+            engine: engine,
+            script: script
+        )
+    }
 
-        let waveform = temp.appendingPathComponent("audio.wav")
-        let reference = temp.appendingPathComponent("reference.json")
-        let output = temp.appendingPathComponent("output.json")
-        let progress = temp.appendingPathComponent("progress.json")
-        let log = temp.appendingPathComponent("logs.txt")
-
+    private func prepareAndAlign(
+        audioURL: URL,
+        lines: [LyricLine],
+        paths: CTCTemporaryPaths,
+        engine: URL,
+        script: URL
+    ) async throws -> AcousticLyricsAlignment {
         onProgress?(AIProcessingUpdate(
             title: "Подготовка аудио для CTC",
             detail: "Преобразование в WAV 16 кГц, моно"
         ))
-        try await Self.convert(input: audioURL, output: waveform)
-        try JSONEncoder().encode(CTCReference(schemaVersion: 1, lines: lines)).write(to: reference)
-        let cache = try modelCache()
+        try await Self.convert(input: audioURL, output: paths.waveform)
+        try JSONEncoder().encode(CTCReference(schemaVersion: 1, lines: lines)).write(to: paths.reference)
+        return try await runAligner(
+            paths: paths,
+            engine: engine,
+            script: script,
+            cache: modelCache()
+        )
+    }
 
+    private func runAligner(
+        paths: CTCTemporaryPaths,
+        engine: URL,
+        script: URL,
+        cache: URL
+    ) async throws -> AcousticLyricsAlignment {
         let process = Process()
         process.executableURL = engine
         process.arguments = [
             script.path,
-            "--audio", waveform.path,
-            "--reference", reference.path,
-            "--output", output.path,
-            "--progress", progress.path,
+            "--audio", paths.waveform.path,
+            "--reference", paths.reference.path,
+            "--output", paths.output.path,
+            "--progress", paths.progress.path,
             "--cache", cache.path,
         ]
         process.environment = ProcessInfo.processInfo.environment.merging([
@@ -88,8 +119,8 @@ public final class LyricsCTCAligner {
             "HF_HOME": cache.path,
             "HF_HUB_DISABLE_TELEMETRY": "1",
         ]) { _, new in new }
-        FileManager.default.createFile(atPath: log.path, contents: nil)
-        let handle = try FileHandle(forWritingTo: log)
+        FileManager.default.createFile(atPath: paths.log.path, contents: nil)
+        let handle = try FileHandle(forWritingTo: paths.log)
         defer { try? handle.close() }
         process.standardOutput = handle
         process.standardError = handle
@@ -98,7 +129,6 @@ public final class LyricsCTCAligner {
             title: "Запуск CTC для песенного текста",
             detail: "Модель загрузится локально; при первом запуске нужно несколько ГБ"
         ))
-
         try process.run()
         defer {
             if process.isRunning {
@@ -108,7 +138,7 @@ public final class LyricsCTCAligner {
 
         while process.isRunning {
             try Task.checkCancellation()
-            if let update = readProgress(at: progress) {
+            if let update = readProgress(at: paths.progress) {
                 onProgress?(update)
             }
             try await Task.sleep(for: .milliseconds(700))
@@ -117,10 +147,10 @@ public final class LyricsCTCAligner {
         try Task.checkCancellation()
 
         guard process.terminationStatus == 0 else {
-            let details = (try? String(contentsOf: log, encoding: .utf8)) ?? ""
+            let details = (try? String(contentsOf: paths.log, encoding: .utf8)) ?? ""
             throw LyricsCTCAlignmentError.processingFailed(String(details.suffix(500)))
         }
-        guard let data = try? Data(contentsOf: output),
+        guard let data = try? Data(contentsOf: paths.output),
               let result = try? JSONDecoder().decode(AcousticLyricsAlignment.self, from: data),
               result.schemaVersion == 1
         else { throw LyricsCTCAlignmentError.invalidResult }
