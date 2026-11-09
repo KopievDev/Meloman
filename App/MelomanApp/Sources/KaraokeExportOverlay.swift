@@ -78,10 +78,17 @@ enum KaraokeExportOverlay {
             cue: cue,
             visible: values,
             measured: ctLine,
-            font: font,
-            color: KaraokeStyleRendering.color(style.highlightColor)
+            appearance: HighlightAppearance(
+                font: font,
+                color: KaraokeStyleRendering.color(style.highlightColor)
+            )
         )
         return root
+    }
+
+    private struct HighlightAppearance {
+        let font: CTFont
+        let color: NSColor
     }
 
     private static func addWordHighlights(
@@ -89,8 +96,7 @@ enum KaraokeExportOverlay {
         cue: KaraokeExportCue,
         visible: [String],
         measured: CTLine,
-        font: CTFont,
-        color: NSColor
+        appearance: HighlightAppearance
     ) {
         let fullText = visible.joined(separator: " ")
         let height = root.bounds.height
@@ -102,7 +108,11 @@ enum KaraokeExportOverlay {
             let end = CTLineGetOffsetForStringIndex(measured, offset, nil)
 
             if !word.isHidden, end > start {
-                let highlight = attributedText(fullText, font: font, color: color)
+                let highlight = attributedText(
+                    fullText,
+                    font: appearance.font,
+                    color: appearance.color
+                )
                 let layer = textLayer(highlight, width: root.bounds.width, height: height)
                 let mask = CALayer()
                 mask.backgroundColor = NSColor.white.cgColor

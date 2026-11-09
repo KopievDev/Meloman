@@ -41,8 +41,11 @@ extension WorkspaceViewController {
             await self?.performKaraokeExport(
                 asset: asset,
                 source: source,
-                lyrics: lyrics,
-                style: project.karaokeStyle(for: id),
+                karaoke: KaraokeDocument(
+                    mediaID: id,
+                    lines: lyrics,
+                    style: project.karaokeStyle(for: id)
+                ),
                 instrumental: instrumentalCheck.state == .on,
                 destination: output
             )
@@ -52,8 +55,7 @@ extension WorkspaceViewController {
     func performKaraokeExport(
         asset: MediaAsset,
         source: URL,
-        lyrics: [LyricLine],
-        style: KaraokeStyle,
+        karaoke: KaraokeDocument,
         instrumental: Bool,
         destination: URL
     ) async {
@@ -84,8 +86,7 @@ extension WorkspaceViewController {
             try await movieExporter.export(
                 source: source,
                 media: asset,
-                lyrics: lyrics,
-                style: style,
+                karaoke: karaoke,
                 instrumental: audioURL,
                 to: destination
             )
