@@ -42,6 +42,7 @@ extension WorkspaceViewController {
                 asset: asset,
                 source: source,
                 lyrics: lyrics,
+                style: project.karaokeStyle(for: id),
                 instrumental: instrumentalCheck.state == .on,
                 destination: output
             )
@@ -52,6 +53,7 @@ extension WorkspaceViewController {
         asset: MediaAsset,
         source: URL,
         lyrics: [LyricLine],
+        style: KaraokeStyle,
         instrumental: Bool,
         destination: URL
     ) async {
@@ -83,6 +85,7 @@ extension WorkspaceViewController {
                 source: source,
                 media: asset,
                 lyrics: lyrics,
+                style: style,
                 instrumental: audioURL,
                 to: destination
             )

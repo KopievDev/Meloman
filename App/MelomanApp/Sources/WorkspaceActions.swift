@@ -185,6 +185,7 @@ extension WorkspaceViewController {
             !project.karaokeLines(for: $0).isEmpty
         } == true
         updateStemButtons()
+        refreshStyleControls()
     }
 
     func showError(_ message: String) {

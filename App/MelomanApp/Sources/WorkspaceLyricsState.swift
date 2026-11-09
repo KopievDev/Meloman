@@ -8,6 +8,8 @@ extension WorkspaceViewController {
         let mediaID = selectedMediaID
         let lyrics = mediaID.map { project.karaokeLines(for: $0) } ?? []
         preview.karaokeOverlay.lyrics = lyrics
+        preview.karaokeOverlay.style = mediaID.map { project.karaokeStyle(for: $0) } ?? .init()
+        refreshStyleControls()
         lyricStrip.lines = lyrics
         lyricStrip.duration = project.media.first(where: { $0.id == mediaID })?.duration ?? .zero
         let seconds = Double(lyricStrip.duration.microseconds) / 1_000_000
