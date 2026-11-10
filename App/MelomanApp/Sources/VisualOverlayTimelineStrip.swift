@@ -22,7 +22,9 @@ final class VisualOverlayTimelineStrip: NSView {
 
     var onSelect: ((UUID, Timecode) -> Void)?
 
-    override var isFlipped: Bool { true }
+    override var isFlipped: Bool {
+        true
+    }
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
