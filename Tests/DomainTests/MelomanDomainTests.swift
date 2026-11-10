@@ -46,10 +46,30 @@ final class MelomanDomainTests: XCTestCase {
         XCTAssertNil(project.backgroundImage(for: first))
     }
 
+    func testVideoBackgroundIsPerTrackAndOptional() throws {
+        let id = UUID()
+        let another = UUID()
+        var project = MelomanProject(name: "Видео")
+        let video = MediaBackgroundVideo(mediaID: id, fileExtension: "MOV")
+        project.setBackgroundVideo(video, for: id)
+
+        XCTAssertEqual(project.backgroundVideo(for: id)?.packagedFilename, "\(id.uuidString).mov")
+        XCTAssertNil(project.backgroundVideo(for: another))
+
+        let encoded = try JSONEncoder().encode(project)
+        let restored = try JSONDecoder().decode(MelomanProject.self, from: encoded)
+        XCTAssertEqual(restored.backgroundVideo(for: id), video)
+
+        project.setBackgroundVideo(nil, for: id)
+        XCTAssertNil(project.backgroundVideo(for: id))
+    }
+
     func testLegacyProjectWithoutBackgroundImagesDecodes() throws {
         let project = MelomanProject(name: "Старый проект")
         let data = try JSONEncoder().encode(project)
-        XCTAssertNil(try JSONDecoder().decode(MelomanProject.self, from: data).backgroundImages)
+        let restored = try JSONDecoder().decode(MelomanProject.self, from: data)
+        XCTAssertNil(restored.backgroundImages)
+        XCTAssertNil(restored.backgroundVideos)
     }
 
     func testProjectJSONRoundTripPreservesLyricsAndTracks() throws {
