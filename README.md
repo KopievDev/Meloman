@@ -4,7 +4,7 @@
 
 See the [MVP roadmap](docs/ROADMAP.md) for product scope and planned milestones.
 
-> **Status:** Native MP4 export, karaoke style controls, still/video backgrounds are implemented. Animated GIF backgrounds are available in PR #14; independent overlay tracks and multi-layer timeline editing remain future milestones.
+> **Status:** Native MP4 export, karaoke style controls, still/video backgrounds are implemented. Animated GIF backgrounds are supported, and two-line current/next karaoke lyrics are being added in PR #16. Independent overlay tracks and multi-layer timeline editing remain future milestones.
 
 ## Requirements
 
