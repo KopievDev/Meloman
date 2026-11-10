@@ -219,6 +219,36 @@ final class ProjectStoreTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: XCTUnwrap(loaded.overlayURLs[second.id])), Data("animated".utf8))
     }
 
+    func testK2PronunciationSurvivesPortablePackageReopen() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let source = directory.appendingPathComponent("english.mp3")
+        try Data("audio".utf8).write(to: source)
+        let media = MediaAsset(name: "english.mp3", fileExtension: "mp3", kind: .audio, duration: .zero)
+        let word = try XCTUnwrap(LyricWord(
+            text: "Look,", start: .zero,
+            end: XCTUnwrap(Timecode(microseconds: 900000))
+        ))
+        var project = MelomanProject(name: "EN + RU", media: [media])
+        project.setKaraokeLines([LyricLine(words: [word])], for: media.id)
+        var k2 = KaraokePronunciationTrack(isEnabled: true)
+        k2.setText("Лук,", for: word.id)
+        project.setKaraokePronunciation(k2, for: media.id)
+
+        let destination = directory.appendingPathComponent("EN-RU.meloman")
+        let saved = try ProjectStore().save(
+            ProjectBundle(project: project, mediaURLs: [media.id: source]),
+            to: destination
+        )
+        try FileManager.default.removeItem(at: source)
+        _ = try ProjectStore().save(saved, to: destination)
+        let reopened = try ProjectStore().open(at: destination)
+        XCTAssertEqual(reopened.project.karaokePronunciation(for: media.id), k2)
+        XCTAssertEqual(reopened.project.karaokeLines(for: media.id)[0].words[0].id, word.id)
+    }
+
     func testProjectMustUseMelomanExtension() {
         let invalid = FileManager.default.temporaryDirectory.appendingPathComponent("not-a-package.zip")
         XCTAssertThrowsError(try ProjectStore().open(at: invalid))
