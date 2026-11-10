@@ -11,6 +11,7 @@ final class WorkspaceViewController: NSViewController {
     var projectURL: URL?
     var mediaURLs: [UUID: URL] = [:]
     var backgroundURLs: [UUID: URL] = [:]
+    var backgroundVideoURLs: [UUID: URL] = [:]
     var selectedMediaID: UUID?
     var isBusy = false
 
@@ -38,6 +39,7 @@ final class WorkspaceViewController: NSViewController {
     let styleTextColor = NSColorWell()
     let styleHighlightColor = NSColorWell()
     let backgroundButton = NSButton(title: "Выбрать изображение…", target: nil, action: nil)
+    let videoBackgroundButton = NSButton(title: "Выбрать видео…", target: nil, action: nil)
     let clearBackgroundButton = NSButton(title: "Сбросить фон", target: nil, action: nil)
     let backgroundInfo = NSTextField(labelWithString: "Чёрный фон")
     let resetStyleButton = NSButton(title: "Сбросить", target: nil, action: nil)
@@ -54,6 +56,10 @@ final class WorkspaceViewController: NSViewController {
     var aiProgressStartedAt: Date?
     var aiProgressTimer: Timer?
     let player = AVPlayer()
+    let backgroundPlayer = AVPlayer()
+    var backgroundVideoDuration = 0.0
+    var activeBackgroundVideoURL: URL?
+    var backgroundDurationTask: Task<Void, Never>?
     let lyricStrip = KaraokeTimelineStrip()
     let karaokeButton = NSButton(title: "Текст песни", target: nil, action: nil)
     let lyricTextField = NSTextField(string: "")
@@ -118,6 +124,8 @@ final class WorkspaceViewController: NSViewController {
         ])
 
         preview.playerLayer.player = player
+        preview.backgroundVideoLayer.player = backgroundPlayer
+        backgroundPlayer.isMuted = true
         view = root
         refreshMediaList()
         refreshKaraoke()

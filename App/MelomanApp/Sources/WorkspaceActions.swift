@@ -70,6 +70,7 @@ extension WorkspaceViewController {
 
     func loadSelectedMedia() {
         player.pause()
+        configureBackgroundVideo(nil)
         guard let selected = project.media.first(where: { $0.id == selectedMediaID }),
               let url = mediaURLs[selected.id]
         else {
@@ -158,6 +159,7 @@ extension WorkspaceViewController {
         let duration = Double(selected.duration.microseconds) / 1_000_000
         let time = CMTime(seconds: sender.doubleValue * duration, preferredTimescale: 1_000_000)
         player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+        syncBackgroundVideo(to: time.seconds, forceSeek: true)
         updatePlaybackUI()
     }
 
@@ -171,6 +173,7 @@ extension WorkspaceViewController {
         timeLabel.stringValue = "\(formatTime(safeTime)) / \(formatTime(duration))"
         playButton.title = player.rate == 0 ? "▶" : "❚❚"
         refreshKaraokePlayhead(safeTime)
+        syncBackgroundVideo(to: safeTime)
     }
 
     func formatTime(_ seconds: Double) -> String {
