@@ -16,6 +16,10 @@ extension WorkspaceViewController {
         panel.allowedContentTypes = [.mpeg4Movie, .quickTimeMovie] +
             (UTType(filenameExtension: "m4v").map { [$0] } ?? [])
         guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard ["mp4", "mov", "m4v"].contains(url.pathExtension.lowercased()) else {
+            showError("Поддерживаются только MP4, MOV и M4V.")
+            return
+        }
 
         Task { @MainActor [weak self] in
             do {
