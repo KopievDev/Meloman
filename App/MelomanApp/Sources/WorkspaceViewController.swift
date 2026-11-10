@@ -63,6 +63,13 @@ final class WorkspaceViewController: NSViewController {
     var activeBackgroundVideoURL: URL?
     var backgroundDurationTask: Task<Void, Never>?
     let lyricStrip = KaraokeTimelineStrip()
+    let pronunciationStrip = KaraokeTimelineStrip()
+    let pronunciationToggle = NSButton(
+        checkboxWithTitle: "Показывать русское произношение", target: nil, action: nil
+    )
+    let pronunciationDraftButton = NSButton(title: "Создать черновик RU", target: nil, action: nil)
+    let pronunciationWordField = NSTextField(string: "")
+    let pronunciationApplyButton = NSButton(title: "Применить произношение", target: nil, action: nil)
     let visualOverlayStrip = VisualOverlayTimelineStrip()
     let overlayMenu = NSPopUpButton(frame: .zero, pullsDown: false)
     let addOverlayButton = NSButton(title: "Добавить PNG/GIF…", target: nil, action: nil)
@@ -133,7 +140,7 @@ final class WorkspaceViewController: NSViewController {
             timeline.leadingAnchor.constraint(equalTo: root.leadingAnchor),
             timeline.trailingAnchor.constraint(equalTo: root.trailingAnchor),
             timeline.bottomAnchor.constraint(equalTo: root.bottomAnchor),
-            timeline.heightAnchor.constraint(equalToConstant: 215),
+            timeline.heightAnchor.constraint(equalToConstant: 255),
         ])
 
         preview.playerLayer.player = player

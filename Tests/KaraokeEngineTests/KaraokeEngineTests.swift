@@ -137,6 +137,26 @@ final class KaraokeEngineTests: XCTestCase {
         XCTAssertEqual(display.upcoming?.lineID, second.id)
     }
 
+    func testEnglishRussianPhoneticDraftMatchesExample() {
+        let source = ["Look,", "if", "you", "had"]
+        XCTAssertEqual(source.map(EnglishToRussianPronunciation.draft), ["Лук,", "иф", "ю", "хад"])
+        XCTAssertEqual(EnglishToRussianPronunciation.draft("opportunity"), "оппортюнити")
+    }
+
+    func testDraftFillsMissingWordsWithoutOverwritingCorrections() throws {
+        let duration = try XCTUnwrap(Timecode(microseconds: 4_000_000))
+        let lyrics = LyricsDraftBuilder.build(text: "Look, if you had", duration: duration)
+        let words = lyrics.flatMap(\.words)
+        var track = KaraokePronunciationTrack(isEnabled: true)
+        track.setText("Лук, (мой вариант)", for: words[0].id)
+        let result = EnglishToRussianPronunciation.fillMissing(track: track, lines: lyrics)
+        XCTAssertEqual(result.text(for: words[0].id), "Лук, (мой вариант)")
+        XCTAssertEqual(result.text(for: words[1].id), "иф")
+        XCTAssertEqual(result.text(for: words[2].id), "ю")
+        XCTAssertEqual(result.text(for: words[3].id), "хад")
+        XCTAssertFalse(result.words.contains(where: \.text.isEmpty))
+    }
+
     func testMultiMediaKaraokeDocumentsStayIndependent() throws {
         let firstID = UUID()
         let secondID = UUID()

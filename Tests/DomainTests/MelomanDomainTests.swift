@@ -124,6 +124,45 @@ final class MelomanDomainTests: XCTestCase {
         ))
     }
 
+    func testK2PronunciationPersistsAndSharesEnglishWordIdentity() throws {
+        let mediaID = UUID()
+        let english = try XCTUnwrap(LyricWord(
+            text: "look", start: .zero, end: XCTUnwrap(Timecode(microseconds: 800_000))
+        ))
+        var project = MelomanProject(name: "EN with RU hints")
+        project.setKaraokeLines([LyricLine(words: [english])], for: mediaID)
+        var track = KaraokePronunciationTrack(isEnabled: true)
+        track.setText("лук", for: english.id)
+        project.setKaraokePronunciation(track, for: mediaID)
+        let decoded = try JSONDecoder().decode(
+            MelomanProject.self, from: JSONEncoder().encode(project)
+        )
+        XCTAssertEqual(decoded.karaokePronunciation(for: mediaID), track)
+        XCTAssertEqual(decoded.karaokePronunciation(for: mediaID).text(for: english.id), "лук")
+        XCTAssertFalse(decoded.karaokePronunciation(for: UUID()).isEnabled)
+
+        project.setKaraokeLines([], for: mediaID)
+        XCTAssertTrue(project.karaokePronunciation(for: mediaID).words.isEmpty)
+        XCTAssertTrue(project.karaokePronunciation(for: mediaID).isEnabled)
+    }
+
+    func testLegacyKaraokeDocumentsHaveNoPronunciation() throws {
+        let mediaID = UUID()
+        let original = KaraokeDocument(mediaID: mediaID)
+        let encoded = try JSONEncoder().encode(original)
+        let legacy = try JSONDecoder().decode(KaraokeDocument.self, from: encoded)
+        XCTAssertNil(legacy.pronunciation)
+    }
+
+    func testWordPronunciationCanBeClearedWithoutTouchingEnglish() {
+        let wordID = UUID()
+        var track = KaraokePronunciationTrack(isEnabled: true)
+        track.setText(" ю ", for: wordID)
+        XCTAssertEqual(track.text(for: wordID), "ю")
+        track.setText(" ", for: wordID)
+        XCTAssertNil(track.text(for: wordID))
+    }
+
     func testProjectJSONRoundTripPreservesLyricsAndTracks() throws {
         let start = try XCTUnwrap(Timecode(microseconds: 100_000))
         let end = try XCTUnwrap(Timecode(microseconds: 750_000))

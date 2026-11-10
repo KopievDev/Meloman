@@ -10,6 +10,7 @@ extension WorkspaceViewController {
         inspectorInfo.lineBreakMode = .byWordWrapping
 
         let lyricsControls = makeLyricsInspectorControls()
+        let pronunciationControls = makePronunciationControls()
         let styleControls = makeKaraokeStyleControls()
         let backgroundControls = makeBackgroundControls()
         let overlayControls = makeVisualOverlayControls()
@@ -19,14 +20,14 @@ extension WorkspaceViewController {
         let separation = makeVocalControls()
 
         let column = NSStackView(views: [
-            title, inspectorInfo, lyricsControls, styleControls, backgroundControls,
+            title, inspectorInfo, lyricsControls, pronunciationControls, styleControls, backgroundControls,
             overlayControls, languageTitle, recognitionLanguage, separation,
         ])
         column.orientation = .vertical
         column.alignment = .leading
         column.spacing = 15
         for view in [
-            inspectorInfo, lyricsControls, styleControls,
+            inspectorInfo, lyricsControls, pronunciationControls, styleControls,
             backgroundControls, overlayControls, recognitionLanguage, separation,
         ] {
             view.translatesAutoresizingMaskIntoConstraints = false
@@ -64,21 +65,18 @@ extension WorkspaceViewController {
         let panel = makePanel()
         let heading = label("ТАЙМЛАЙН", size: 11, weight: .semibold, color: .secondaryLabelColor)
         timelineInfo.textColor = .secondaryLabelColor
-        let tracks = NSStackView(views: [
-            label("V1   Видео", size: 12, color: .secondaryLabelColor),
-            label("V3   Графика", size: 12, color: .secondaryLabelColor),
-            label("K1   Караоке", size: 12, color: .secondaryLabelColor),
-            label("A1   Аудио", size: 12, color: .secondaryLabelColor),
-        ])
-        tracks.orientation = .vertical
-        tracks.alignment = .leading
-        tracks.spacing = 12
+        let tracks = makeTimelineTrackLabels()
 
         let wordScroll = makeLyricTimelineScroll()
         let overlayScroll = makeGraphicTimelineScroll()
+        let pronunciationScroll = makePronunciationTimelineScroll()
 
         let progressPanel = makeAIProgressPanel()
-        for child in [heading, timelineInfo, tracks, overlayScroll, wordScroll, statusLabel, progressPanel] {
+        let timelineViews = [
+            heading, timelineInfo, tracks, overlayScroll, wordScroll, pronunciationScroll,
+            statusLabel, progressPanel,
+        ]
+        for child in timelineViews {
             child.translatesAutoresizingMaskIntoConstraints = false
             panel.addSubview(child)
         }
@@ -98,7 +96,11 @@ extension WorkspaceViewController {
             wordScroll.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 137),
             wordScroll.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -18),
             wordScroll.centerYAnchor.constraint(equalTo: tracks.arrangedSubviews[2].centerYAnchor),
-            wordScroll.heightAnchor.constraint(equalToConstant: 40),
+            wordScroll.heightAnchor.constraint(equalToConstant: 34),
+            pronunciationScroll.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 137),
+            pronunciationScroll.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -18),
+            pronunciationScroll.centerYAnchor.constraint(equalTo: tracks.arrangedSubviews[3].centerYAnchor),
+            pronunciationScroll.heightAnchor.constraint(equalToConstant: 34),
             statusLabel.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 18),
             statusLabel.trailingAnchor.constraint(lessThanOrEqualTo: progressPanel.leadingAnchor, constant: -12),
             statusLabel.bottomAnchor.constraint(equalTo: panel.bottomAnchor, constant: -14),
@@ -111,6 +113,20 @@ extension WorkspaceViewController {
         return panel
     }
 
+    private func makeTimelineTrackLabels() -> NSStackView {
+        let tracks = NSStackView(views: [
+            label("V1   Видео", size: 12, color: .secondaryLabelColor),
+            label("V3   Графика", size: 12, color: .secondaryLabelColor),
+            label("K1   Караоке", size: 12, color: .secondaryLabelColor),
+            label("K2   Произношение RU", size: 12, color: .secondaryLabelColor),
+            label("A1   Аудио", size: 12, color: .secondaryLabelColor),
+        ])
+        tracks.orientation = .vertical
+        tracks.alignment = .leading
+        tracks.spacing = 12
+        return tracks
+    }
+
     private func makeLyricTimelineScroll() -> NSScrollView {
         let wordScroll = NSScrollView()
         wordScroll.hasHorizontalScroller = true
@@ -121,6 +137,18 @@ extension WorkspaceViewController {
         }
         wordScroll.documentView = lyricStrip
         return wordScroll
+    }
+
+    private func makePronunciationTimelineScroll() -> NSScrollView {
+        let scroll = NSScrollView()
+        scroll.hasHorizontalScroller = true
+        scroll.drawsBackground = false
+        pronunciationStrip.frame = NSRect(x: 0, y: 0, width: 660, height: 32)
+        pronunciationStrip.onSelect = { [weak self] id, time in
+            self?.selectLyricWord(id, seekTo: time)
+        }
+        scroll.documentView = pronunciationStrip
+        return scroll
     }
 
     private func makeGraphicTimelineScroll() -> NSScrollView {

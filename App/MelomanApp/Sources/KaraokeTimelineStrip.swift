@@ -8,6 +8,11 @@ final class KaraokeTimelineStrip: NSView {
         didSet { needsDisplay = true }
     }
 
+    /// Non-nil switches this instance to the optional K2 phonetic word track.
+    var pronunciation: KaraokePronunciationTrack? {
+        didSet { needsDisplay = true }
+    }
+
     var duration: Timecode = .zero {
         didSet { needsDisplay = true }
     }
@@ -39,6 +44,8 @@ final class KaraokeTimelineStrip: NSView {
                 .systemYellow
             } else if let confidence = word.alignmentConfidence, confidence < 0.25 {
                 NSColor.systemOrange.withAlphaComponent(0.75)
+            } else if pronunciation != nil {
+                NSColor.systemIndigo.withAlphaComponent(pronunciation?.isEnabled == true ? 0.75 : 0.25)
             } else {
                 NSColor.systemTeal.withAlphaComponent(0.65)
             }
@@ -48,7 +55,11 @@ final class KaraokeTimelineStrip: NSView {
             if rect.width > 24 {
                 let paragraph = NSMutableParagraphStyle()
                 paragraph.lineBreakMode = .byTruncatingTail
-                let title = word.isHidden ? "____" : word.text
+                let title = if word.isHidden {
+                    "____"
+                } else {
+                    pronunciation?.text(for: word.id) ?? (pronunciation == nil ? word.text : "")
+                }
                 let attributes: [NSAttributedString.Key: Any] = [
                     .font: NSFont.systemFont(ofSize: 11, weight: .medium),
                     .foregroundColor: NSColor.black,
