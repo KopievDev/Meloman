@@ -90,7 +90,7 @@ final class KaraokeOverlayView: NSView {
             let word = highlight.words[index]
             let startX = CTLineGetOffsetForStringIndex(highlight.base, offset, nil)
             offset += (value as NSString).length
-            let endX = CTLineGetOffsetForStringIndex(base, offset, nil)
+            let endX = CTLineGetOffsetForStringIndex(highlight.base, offset, nil)
 
             if !word.isHidden, word.progress > 0 {
                 context.saveGState()
