@@ -67,7 +67,11 @@ enum KaraokeBackgroundMovie {
 
         writer.endSession(atSourceTime: duration)
         input.markAsFinished()
-        await writer.finishWriting()
+        await withCheckedContinuation { continuation in
+            writer.finishWriting {
+                continuation.resume()
+            }
+        }
         guard writer.status == .completed else { throw writer.error ?? KaraokeBackgroundError.encodingFailed }
         return output
     }
