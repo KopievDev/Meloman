@@ -72,6 +72,37 @@ final class KaraokeExportTimelineTests: XCTestCase {
         XCTAssertEqual(cues.map(\.end.microseconds), [3_000_000, 5_000_000, 6_000_000])
     }
 
+    func testTwoLineExportHasUpcomingAndCurrentCues() throws {
+        let duration = try XCTUnwrap(Timecode(microseconds: 9_000_000))
+        let lyrics = LyricsDraftBuilder.build(text: "Первая\nВторая\nТретья", duration: duration)
+        let cues = KaraokeDisplayTimeline.cues(from: lyrics, duration: duration)
+        let current = cues.filter { $0.row == .current }
+        let upcoming = cues.filter { $0.row == .upcoming }
+        XCTAssertEqual(current.map(\.line.id), lyrics.map(\.id))
+        XCTAssertEqual(upcoming.map(\.line.id), Array(lyrics.dropFirst()).map(\.id))
+        XCTAssertEqual(upcoming.first?.start.microseconds, 0)
+        XCTAssertEqual(upcoming.first?.end.microseconds, 3_000_000)
+        XCTAssertEqual(current[1].start.microseconds, 3_000_000)
+    }
+
+    func testTwoLineExportAndPreviewAgreeAtTransitions() throws {
+        let duration = try XCTUnwrap(Timecode(microseconds: 10_000_000))
+        let lyrics = LyricsDraftBuilder.build(text: "Раз два\nТри четыре\nПять", duration: duration)
+        let cues = KaraokeDisplayTimeline.cues(from: lyrics, duration: duration)
+        for seconds in [0.0, 1.5, 4.0, 5.0, 8.5, 9.9] {
+            let time = try XCTUnwrap(Timecode(microseconds: Int64(seconds * 1_000_000)))
+            let preview = KaraokeDisplayEngine.frame(at: time, lines: lyrics)
+            let current = cues.first {
+                $0.row == .current && $0.start <= time && time < $0.end
+            }
+            let next = cues.first {
+                $0.row == .upcoming && $0.start <= time && time < $0.end
+            }
+            XCTAssertEqual(current?.line.id, preview.current?.lineID)
+            XCTAssertEqual(next?.line.id, preview.upcoming?.lineID)
+        }
+    }
+
     func testInvalidAndEmptyLinesAreNotExported() throws {
         let duration = try XCTUnwrap(Timecode(microseconds: 3_000_000))
         let late = try XCTUnwrap(Timecode(microseconds: 4_000_000))

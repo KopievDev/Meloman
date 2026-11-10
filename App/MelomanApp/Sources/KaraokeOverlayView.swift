@@ -25,16 +25,23 @@ final class KaraokeOverlayView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        guard bounds.width > 40,
-              let frame = KaraokeEngine.frame(at: playhead, lines: lyrics),
-              let context = NSGraphicsContext.current?.cgContext
-        else { return }
+        guard bounds.width > 40, let context = NSGraphicsContext.current?.cgContext else { return }
+        let display = KaraokeDisplayEngine.frame(at: playhead, lines: lyrics)
+        if let current = display.current {
+            drawRow(current, row: .current, in: context)
+        }
+        if let upcoming = display.upcoming {
+            drawRow(upcoming, row: .upcoming, in: context)
+        }
+    }
 
+    private func drawRow(_ frame: KaraokeFrame, row: KaraokeDisplayRow, in context: CGContext) {
         let values = frame.words.map { $0.isHidden ? "____" : $0.text }
         let fullText = values.joined(separator: " ")
         let font = KaraokeStyleRendering.font(for: style, width: bounds.width)
-        let base = createLine(fullText, font: font, color: KaraokeStyleRendering.color(style.textColor))
-        let fill = createLine(fullText, font: font, color: KaraokeStyleRendering.color(style.highlightColor))
+        let color = KaraokeStyleRendering.color(style.textColor)
+        let textColor = row == .current ? color : color.withAlphaComponent(0.68)
+        let base = createLine(fullText, font: font, color: textColor)
 
         var ascent: CGFloat = 0
         var descent: CGFloat = 0
@@ -44,39 +51,65 @@ final class KaraokeOverlayView: NSView {
         let scale = min(1, max(0.01, (bounds.width - 36) / width))
         let originX = max(18, (bounds.width - width * scale) / 2)
         let baselineY = KaraokeStyleRendering.baseline(
-            for: style,
+            for: row,
+            style: style,
             size: bounds.size,
             fontSize: CGFloat(CTFontGetSize(font))
         )
-
         beginDrawing(context, originX: originX, baselineY: baselineY, scale: scale, line: base)
 
+        if row == .current {
+            let fill = createLine(fullText, font: font, color: KaraokeStyleRendering.color(style.highlightColor))
+            drawHighlights(
+                HighlightContent(
+                    words: frame.words,
+                    values: values,
+                    base: base,
+                    fill: fill,
+                    ascent: ascent,
+                    descent: descent
+                ),
+                in: context
+            )
+        }
+        context.restoreGState()
+    }
+
+    private struct HighlightContent {
+        let words: [KaraokeWordFrame]
+        let values: [String]
+        let base: CTLine
+        let fill: CTLine
+        let ascent: CGFloat
+        let descent: CGFloat
+    }
+
+    private func drawHighlights(_ highlight: HighlightContent, in context: CGContext) {
         var offset = 0
-        for (index, value) in values.enumerated() {
-            let word = frame.words[index]
-            let startX = CTLineGetOffsetForStringIndex(base, offset, nil)
+        for (index, value) in highlight.values.enumerated() {
+            let word = highlight.words[index]
+            let startX = CTLineGetOffsetForStringIndex(highlight.base, offset, nil)
             offset += (value as NSString).length
-            let endX = CTLineGetOffsetForStringIndex(base, offset, nil)
+            let endX = CTLineGetOffsetForStringIndex(highlight.base, offset, nil)
 
             if !word.isHidden, word.progress > 0 {
                 context.saveGState()
                 let clip = CGRect(
                     x: startX,
-                    y: -descent - 2,
+                    y: -highlight.descent - 2,
                     width: max(0, endX - startX) * CGFloat(word.progress),
-                    height: ascent + descent + 5
+                    height: highlight.ascent + highlight.descent + 5
                 )
                 context.clip(to: clip)
                 context.textPosition = .zero
-                CTLineDraw(fill, context)
+                CTLineDraw(highlight.fill, context)
                 context.restoreGState()
             }
 
-            if index < values.count - 1 {
+            if index < highlight.values.count - 1 {
                 offset += 1 // UTF-16 space separator
             }
         }
-        context.restoreGState()
     }
 
     private func beginDrawing(

@@ -92,6 +92,51 @@ final class KaraokeEngineTests: XCTestCase {
         XCTAssertEqual(KaraokeEngine.frame(at: time, lines: [previous, current])?.lineID, current.id)
     }
 
+    func testTwoLinesShowUpcomingTextBeforeItsFirstWord() throws {
+        let duration = try XCTUnwrap(Timecode(microseconds: 12_000_000))
+        let lyrics = LyricsDraftBuilder.build(text: "Сейчас поём\nСледующая строка\nФинал", duration: duration)
+        let point = try XCTUnwrap(Timecode(microseconds: 1_000_000))
+        let display = KaraokeDisplayEngine.frame(at: point, lines: lyrics)
+
+        XCTAssertEqual(display.current?.words.map(\.text), ["Сейчас", "поём"])
+        XCTAssertEqual(display.upcoming?.words.map(\.text), ["Следующая", "строка"])
+        XCTAssertTrue(display.upcoming?.words.allSatisfy { $0.progress == 0 } == true)
+    }
+
+    func testNextLineMovesToTopWhenSingingStarts() throws {
+        let duration = try XCTUnwrap(Timecode(microseconds: 9_000_000))
+        let lyrics = LyricsDraftBuilder.build(text: "Первая\nВторая\nТретья", duration: duration)
+        let before = try XCTUnwrap(Timecode(microseconds: 2_900_000))
+        let after = try XCTUnwrap(Timecode(microseconds: 3_100_000))
+        let prepared = KaraokeDisplayEngine.frame(at: before, lines: lyrics)
+        let changed = KaraokeDisplayEngine.frame(at: after, lines: lyrics)
+
+        XCTAssertEqual(prepared.current?.lineID, lyrics[0].id)
+        XCTAssertEqual(prepared.upcoming?.lineID, lyrics[1].id)
+        XCTAssertEqual(changed.current?.lineID, lyrics[1].id)
+        XCTAssertEqual(changed.upcoming?.lineID, lyrics[2].id)
+        XCTAssertTrue((changed.current?.words.first?.progress ?? 0) > 0)
+    }
+
+    func testTwoLineSelectionSurvivesNonMonotonicAITimes() throws {
+        func word(_ text: String, _ start: Int64, _ end: Int64) throws -> LyricWord {
+            try XCTUnwrap(LyricWord(
+                text: text,
+                start: XCTUnwrap(Timecode(microseconds: start)),
+                end: XCTUnwrap(Timecode(microseconds: end))
+            ))
+        }
+        let first = try LyricLine(words: [
+            word("Ночь", 2_000_000, 2_200_000),
+            word("близко", 1_500_000, 2_500_000),
+        ])
+        let second = try LyricLine(words: [word("Утро", 3_000_000, 4_000_000)])
+        let now = try XCTUnwrap(Timecode(microseconds: 1_800_000))
+        let display = KaraokeDisplayEngine.frame(at: now, lines: [first, second])
+        XCTAssertEqual(display.current?.lineID, first.id)
+        XCTAssertEqual(display.upcoming?.lineID, second.id)
+    }
+
     func testMultiMediaKaraokeDocumentsStayIndependent() throws {
         let firstID = UUID()
         let secondID = UUID()
