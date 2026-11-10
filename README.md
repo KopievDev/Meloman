@@ -343,3 +343,22 @@ This first step supports static images for **audio-only** items; source videos
 continue to use their own footage. GIF/video backgrounds, image transitions,
 and multiple visual layers are separate upcoming features. For QA, compare
 preview and exported MP4 on a portrait photo and after saving/reopening a project.
+
+## Looping MP4/MOV backgrounds for audio-only karaoke (PR #13)
+
+In **ФОН ДЛЯ АУДИО**, select **Выбрать видео…** to choose an MP4, MOV or
+M4V for an imported audio track. The video runs *silently* behind the karaoke
+text. When the background is shorter than the song, it starts over; seeking
+and pausing the song also controls the background video. Switching back to a
+still image or resetting the background stops video playback.
+
+On export, the background is repeated in the native AVFoundation composition
+until the audio duration ends. It is cropped to fill the 1280×720 output, and
+**the background video's own audio is never included**. Audio always comes
+from the chosen original/instrumental karaoke track. The video background is
+packaged under BackgroundVideos/ when saving a portable .meloman project.
+
+Manual checks: loop a short portrait and landscape clip, pause/seek the song,
+switch media sources, save/reopen and re-export. Compare MP4 sound, crop and
+word timing against the preview. GIFs, clip trim and arbitrary overlay layers
+remain separate follow-up milestones.

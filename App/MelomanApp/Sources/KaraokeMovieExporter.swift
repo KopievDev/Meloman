@@ -10,6 +10,7 @@ enum KaraokeVideoExportError: LocalizedError {
     case unsupportedMP4
     case invalidVideoSize
     case invalidDuration
+    case invalidBackgroundVideo
 
     var errorDescription: String? {
         switch self {
@@ -20,6 +21,7 @@ enum KaraokeVideoExportError: LocalizedError {
         case .unsupportedMP4: "На этом Mac экспорт в MP4 недоступен."
         case .invalidVideoSize: "У видео некорректное разрешение."
         case .invalidDuration: "У исходного файла некорректная длительность."
+        case .invalidBackgroundVideo: "Видеофон должен содержать видео длительностью не менее 0,5 секунды."
         }
     }
 }
@@ -27,6 +29,7 @@ enum KaraokeVideoExportError: LocalizedError {
 struct KaraokeMovieSources {
     let instrumental: URL?
     let backgroundImage: URL?
+    let backgroundVideo: URL?
 }
 
 private struct MovieTrackLayout {
@@ -35,7 +38,7 @@ private struct MovieTrackLayout {
 }
 
 /// Native offline rendering. Existing source assets are never overwritten.
-/// Videos preserve source footage and audio; audio-only imports gain an optional still-image background.
+/// Videos preserve source footage; audio-only imports can use an image or a silent looping video background.
 @MainActor
 final class KaraokeMovieExporter {
     var onProgress: ((String, String, Double?) -> Void)?
@@ -57,8 +60,12 @@ final class KaraokeMovieExporter {
         try FileManager.default.createDirectory(at: working, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: working) }
 
+        let loopedVideo = media.kind == .audio ? sources.backgroundVideo : nil
         let videoURL: URL
-        if media.kind == .audio {
+        if let loopedVideo {
+            onProgress?("Подготовка видео", "Видеофон повторяется до конца песни", nil)
+            videoURL = loopedVideo
+        } else if media.kind == .audio {
             onProgress?(
                 "Подготовка видео",
                 sources.backgroundImage == nil ? "Создание чёрного фона" : "Подготовка изображения фона",
@@ -76,11 +83,20 @@ final class KaraokeMovieExporter {
         onProgress?("Подготовка экспорта", "Сборка видео, звука и текста", nil)
         let composition = AVMutableComposition()
         let videoAsset = AVURLAsset(url: videoURL)
-        let layout = try await insertVideo(
-            from: videoAsset,
-            into: composition,
-            duration: mediaDuration
-        )
+        let layout: MovieTrackLayout
+        if loopedVideo != nil {
+            layout = try await insertLoopedBackgroundVideo(
+                from: videoAsset,
+                into: composition,
+                duration: mediaDuration
+            )
+        } else {
+            layout = try await insertVideo(
+                from: videoAsset,
+                into: composition,
+                duration: mediaDuration
+            )
+        }
         try await insertAudio(
             from: AVURLAsset(url: sources.instrumental ?? source),
             into: composition,
@@ -122,6 +138,65 @@ final class KaraokeMovieExporter {
         )
         target.preferredTransform = .identity
         return try await videoLayout(for: source)
+    }
+
+
+    private func insertLoopedBackgroundVideo(
+        from asset: AVURLAsset,
+        into composition: AVMutableComposition,
+        duration: CMTime
+    ) async throws -> MovieTrackLayout {
+        guard let source = try await asset.loadTracks(withMediaType: .video).first else {
+            throw KaraokeVideoExportError.invalidBackgroundVideo
+        }
+        let range = try await source.load(.timeRange)
+        let available = range.duration
+        guard available.isNumeric, available.seconds.isFinite, available.seconds >= 0.5 else {
+            throw KaraokeVideoExportError.invalidBackgroundVideo
+        }
+        guard let target = composition.addMutableTrack(
+            withMediaType: .video,
+            preferredTrackID: kCMPersistentTrackID_Invalid
+        ) else { throw KaraokeVideoExportError.cannotCreateTrack }
+
+        var current = CMTime.zero
+        while CMTimeCompare(current, duration) < 0 {
+            try Task.checkCancellation()
+            let remaining = CMTimeSubtract(duration, current)
+            let clipDuration = CMTimeMinimum(available, remaining)
+            try target.insertTimeRange(
+                CMTimeRange(start: range.start, duration: clipDuration),
+                of: source,
+                at: current
+            )
+            current = CMTimeAdd(current, clipDuration)
+        }
+        target.preferredTransform = .identity
+        return try await backgroundVideoLayout(for: source)
+    }
+
+    private func backgroundVideoLayout(for source: AVAssetTrack) async throws -> MovieTrackLayout {
+        let naturalSize = try await source.load(.naturalSize)
+        let transform = try await source.load(.preferredTransform)
+        let rect = CGRect(origin: .zero, size: naturalSize).applying(transform)
+        let width = abs(rect.width)
+        let height = abs(rect.height)
+        guard width.isFinite, height.isFinite, width >= 2, height >= 2 else {
+            throw KaraokeVideoExportError.invalidVideoSize
+        }
+
+        let renderSize = KaraokeBackgroundMovie.size
+        let scale = max(renderSize.width / width, renderSize.height / height)
+        let finalWidth = width * scale
+        let finalHeight = height * scale
+        let normalized = transform
+            .concatenating(CGAffineTransform(translationX: -rect.minX, y: -rect.minY))
+            .concatenating(CGAffineTransform(scaleX: scale, y: scale))
+            .concatenating(CGAffineTransform(
+                translationX: (renderSize.width - finalWidth) / 2,
+                y: (renderSize.height - finalHeight) / 2
+            ))
+        return MovieTrackLayout(size: renderSize, transform: normalized)
     }
 
     private func videoLayout(for source: AVAssetTrack) async throws -> MovieTrackLayout {
