@@ -53,6 +53,57 @@ final class ProjectStoreTests: XCTestCase {
         XCTAssertNotNil(reopened.mediaURLs[asset.id])
     }
 
+    func testBackgroundIsPortableAndSurvivesReSave() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let audio = directory.appendingPathComponent("song.mp3")
+        let image = directory.appendingPathComponent("cover.png")
+        try Data("audio".utf8).write(to: audio)
+        let pixels = Data("image payload".utf8)
+        try pixels.write(to: image)
+        let asset = MediaAsset(name: "song.mp3", fileExtension: "mp3", kind: .audio, duration: .zero)
+        var project = MelomanProject(name: "With image", media: [asset])
+        project.setBackgroundImage(MediaBackgroundImage(mediaID: asset.id, fileExtension: "png"), for: asset.id)
+        let destination = directory.appendingPathComponent("Background.meloman")
+
+        let saved = try ProjectStore().save(
+            ProjectBundle(project: project, mediaURLs: [asset.id: audio], backgroundURLs: [asset.id: image]),
+            to: destination
+        )
+        try FileManager.default.removeItem(at: image)
+        var reopened = try ProjectStore().open(at: destination)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.backgroundURLs[asset.id])), pixels)
+        XCTAssertEqual(reopened.project.backgroundImage(for: asset.id)?.fileExtension, "png")
+
+        reopened = try ProjectStore().save(reopened, to: destination)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.backgroundURLs[asset.id])), pixels)
+        XCTAssertEqual(saved.project, reopened.project)
+    }
+
+    func testMissingPackagedBackgroundIsReported() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let audio = directory.appendingPathComponent("test.wav")
+        let image = directory.appendingPathComponent("cover.jpg")
+        try Data("audio".utf8).write(to: audio)
+        try Data("image".utf8).write(to: image)
+        let asset = MediaAsset(name: "test.wav", fileExtension: "wav", kind: .audio, duration: .zero)
+        var project = MelomanProject(name: "Missing background", media: [asset])
+        project.setBackgroundImage(MediaBackgroundImage(mediaID: asset.id, fileExtension: "jpg"), for: asset.id)
+        let destination = directory.appendingPathComponent("Missing.meloman")
+
+        let saved = try ProjectStore().save(
+            ProjectBundle(project: project, mediaURLs: [asset.id: audio], backgroundURLs: [asset.id: image]),
+            to: destination
+        )
+        try FileManager.default.removeItem(at: XCTUnwrap(saved.backgroundURLs[asset.id]))
+        XCTAssertThrowsError(try ProjectStore().open(at: destination))
+    }
+
     func testProjectMustUseMelomanExtension() {
         let invalid = FileManager.default.temporaryDirectory.appendingPathComponent("not-a-package.zip")
         XCTAssertThrowsError(try ProjectStore().open(at: invalid))

@@ -10,6 +10,7 @@ final class WorkspaceViewController: NSViewController {
     var project = MelomanProject(name: "Новый проект")
     var projectURL: URL?
     var mediaURLs: [UUID: URL] = [:]
+    var backgroundURLs: [UUID: URL] = [:]
     var selectedMediaID: UUID?
     var isBusy = false
 
@@ -36,6 +37,9 @@ final class WorkspaceViewController: NSViewController {
     let stylePositionLabel = NSTextField(labelWithString: "18%")
     let styleTextColor = NSColorWell()
     let styleHighlightColor = NSColorWell()
+    let backgroundButton = NSButton(title: "Выбрать изображение…", target: nil, action: nil)
+    let clearBackgroundButton = NSButton(title: "Сбросить фон", target: nil, action: nil)
+    let backgroundInfo = NSTextField(labelWithString: "Чёрный фон")
     let resetStyleButton = NSButton(title: "Сбросить", target: nil, action: nil)
     let undoStyleButton = NSButton(title: "Отменить стиль", target: nil, action: nil)
     var styleUndoHistory: [UUID: [KaraokeStyle]] = [:]

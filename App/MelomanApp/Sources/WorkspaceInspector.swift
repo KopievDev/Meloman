@@ -11,19 +11,23 @@ extension WorkspaceViewController {
 
         let lyricsControls = makeLyricsInspectorControls()
         let styleControls = makeKaraokeStyleControls()
+        let backgroundControls = makeBackgroundControls()
         let languageTitle = label("ЯЗЫК РАСПОЗНАВАНИЯ", size: 11, color: .secondaryLabelColor)
         recognitionLanguage.addItems(withTitles: ["Авто", "Русский", "English"])
         recognitionLanguage.selectItem(at: 1)
         let separation = makeVocalControls()
 
         let column = NSStackView(views: [
-            title, inspectorInfo, lyricsControls, styleControls,
+            title, inspectorInfo, lyricsControls, styleControls, backgroundControls,
             languageTitle, recognitionLanguage, separation,
         ])
         column.orientation = .vertical
         column.alignment = .leading
         column.spacing = 15
-        for view in [inspectorInfo, lyricsControls, styleControls, recognitionLanguage, separation] {
+        for view in [
+            inspectorInfo, lyricsControls, styleControls,
+            backgroundControls, recognitionLanguage, separation,
+        ] {
             view.translatesAutoresizingMaskIntoConstraints = false
             view.widthAnchor.constraint(equalTo: column.widthAnchor).isActive = true
         }

@@ -18,6 +18,8 @@ public struct MelomanProject: Codable, Equatable, Identifiable, Sendable {
     public var lyrics: [LyricLine]
     /// Per-media editable karaoke documents. Optional to decode projects from PR #2.
     public var karaokeDocuments: [KaraokeDocument]?
+    /// Optional for compatibility with projects saved before image backgrounds.
+    public var backgroundImages: [MediaBackgroundImage]?
     public var vocalRemoval: VocalRemovalConfiguration
 
     public init(
@@ -28,6 +30,7 @@ public struct MelomanProject: Codable, Equatable, Identifiable, Sendable {
         media: [MediaAsset] = [],
         lyrics: [LyricLine] = [],
         karaokeDocuments: [KaraokeDocument]? = nil,
+        backgroundImages: [MediaBackgroundImage]? = nil,
         vocalRemoval: VocalRemovalConfiguration = .init()
     ) {
         self.id = id
@@ -37,6 +40,7 @@ public struct MelomanProject: Codable, Equatable, Identifiable, Sendable {
         self.media = media
         self.lyrics = lyrics
         self.karaokeDocuments = karaokeDocuments
+        self.backgroundImages = backgroundImages
         self.vocalRemoval = vocalRemoval
     }
 }

@@ -3,6 +3,11 @@ import MediaPipeline
 import MelomanDomain
 import UniformTypeIdentifiers
 
+struct KaraokeExportSelection {
+    let instrumental: Bool
+    let backgroundImage: URL?
+}
+
 @MainActor
 extension WorkspaceViewController {
     @objc func exportKaraokeVideo(_: Any?) {
@@ -42,13 +47,16 @@ extension WorkspaceViewController {
             lines: lyrics,
             style: project.karaokeStyle(for: id)
         )
-        let useInstrumental = instrumentalCheck.state == .on
+        let selection = KaraokeExportSelection(
+            instrumental: instrumentalCheck.state == .on,
+            backgroundImage: asset.kind == .audio ? backgroundURLs[id] : nil
+        )
         Task { [weak self] in
             await self?.performKaraokeExport(
                 asset: asset,
                 source: source,
                 karaoke: karaoke,
-                instrumental: useInstrumental,
+                selection: selection,
                 destination: output
             )
         }
@@ -58,7 +66,7 @@ extension WorkspaceViewController {
         asset: MediaAsset,
         source: URL,
         karaoke: KaraokeDocument,
-        instrumental: Bool,
+        selection: KaraokeExportSelection,
         destination: URL
     ) async {
         var temporaryAudio: URL?
@@ -71,7 +79,7 @@ extension WorkspaceViewController {
         }
 
         do {
-            let audioURL: URL? = if instrumental {
+            let audioURL: URL? = if selection.instrumental {
                 try await prepareInstrumental(
                     asset: asset,
                     source: source,
@@ -89,7 +97,10 @@ extension WorkspaceViewController {
                 source: source,
                 media: asset,
                 karaoke: karaoke,
-                instrumental: audioURL,
+                sources: KaraokeMovieSources(
+                    instrumental: audioURL,
+                    backgroundImage: selection.backgroundImage
+                ),
                 to: destination
             )
             displayAIProgress(

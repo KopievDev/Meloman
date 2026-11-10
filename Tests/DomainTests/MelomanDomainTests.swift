@@ -30,6 +30,28 @@ final class MelomanDomainTests: XCTestCase {
         XCTAssertTrue(project.vocalRemoval.isEnabled)
     }
 
+    func testImageBackgroundIsPerMediaAndCanBeRemoved() throws {
+        let first = UUID()
+        let second = UUID()
+        var project = MelomanProject(name: "Тест")
+        let image = MediaBackgroundImage(mediaID: first, fileExtension: "PNG")
+        project.setBackgroundImage(image, for: first)
+
+        XCTAssertEqual(project.backgroundImage(for: first)?.packagedFilename, "\(first.uuidString).png")
+        XCTAssertNil(project.backgroundImage(for: second))
+        let decoded = try JSONDecoder().decode(MelomanProject.self, from: JSONEncoder().encode(project))
+        XCTAssertEqual(decoded.backgroundImage(for: first), project.backgroundImage(for: first))
+
+        project.setBackgroundImage(nil, for: first)
+        XCTAssertNil(project.backgroundImage(for: first))
+    }
+
+    func testLegacyProjectWithoutBackgroundImagesDecodes() throws {
+        let project = MelomanProject(name: "Старый проект")
+        let data = try JSONEncoder().encode(project)
+        XCTAssertNil(try JSONDecoder().decode(MelomanProject.self, from: data).backgroundImages)
+    }
+
     func testProjectJSONRoundTripPreservesLyricsAndTracks() throws {
         let start = try XCTUnwrap(Timecode(microseconds: 100_000))
         let end = try XCTUnwrap(Timecode(microseconds: 750_000))

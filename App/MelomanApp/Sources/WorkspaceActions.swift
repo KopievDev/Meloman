@@ -74,7 +74,10 @@ extension WorkspaceViewController {
               let url = mediaURLs[selected.id]
         else {
             player.replaceCurrentItem(with: nil)
+            preview.playerLayer.isHidden = false
+            preview.backgroundImage = nil
             previewHint.stringValue = "Импортируйте аудио или видео"
+            refreshBackgroundControls()
             playButton.isEnabled = false
             seekSlider.isEnabled = false
             inspectorInfo.stringValue = "Выберите файл в медиатеке"
@@ -84,7 +87,7 @@ extension WorkspaceViewController {
         }
 
         player.replaceCurrentItem(with: AVPlayerItem(url: url))
-        previewHint.stringValue = selected.kind == .audio ? "♫  \(selected.name)" : ""
+        refreshBackgroundPreview()
         playButton.isEnabled = true
         seekSlider.isEnabled = true
         inspectorInfo.stringValue = [
@@ -97,6 +100,7 @@ extension WorkspaceViewController {
         ].joined(separator: "\n")
         timelineInfo.stringValue = "Выбран: \(selected.name)"
         updateStemButtons()
+        refreshBackgroundControls()
         refreshKaraoke()
         updatePlaybackUI()
     }
@@ -186,6 +190,7 @@ extension WorkspaceViewController {
         } == true
         updateStemButtons()
         refreshStyleControls()
+        refreshBackgroundControls()
     }
 
     func showError(_ message: String) {
