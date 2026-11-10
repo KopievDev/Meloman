@@ -49,14 +49,7 @@ final class KaraokeOverlayView: NSView {
             fontSize: CGFloat(CTFontGetSize(font))
         )
 
-        context.saveGState()
-        context.translateBy(x: originX, y: baselineY)
-        context.scaleBy(x: scale, y: scale)
-        context.textMatrix = .identity
-        context.textPosition = .zero
-        context.setShadow(offset: CGSize(width: 1, height: -2), blur: 5, color: NSColor.black.cgColor)
-        CTLineDraw(base, context)
-        context.setShadow(offset: .zero, blur: 0, color: nil)
+        beginDrawing(context, originX: originX, baselineY: baselineY, scale: scale, line: base)
 
         var offset = 0
         for (index, value) in values.enumerated() {
@@ -84,6 +77,23 @@ final class KaraokeOverlayView: NSView {
             }
         }
         context.restoreGState()
+    }
+
+    private func beginDrawing(
+        _ context: CGContext,
+        originX: CGFloat,
+        baselineY: CGFloat,
+        scale: CGFloat,
+        line: CTLine
+    ) {
+        context.saveGState()
+        context.translateBy(x: originX, y: baselineY)
+        context.scaleBy(x: scale, y: scale)
+        context.textMatrix = .identity
+        context.textPosition = .zero
+        context.setShadow(offset: CGSize(width: 1, height: -2), blur: 5, color: NSColor.black.cgColor)
+        CTLineDraw(line, context)
+        context.setShadow(offset: .zero, blur: 0, color: nil)
     }
 
     private func createLine(_ string: String, font: CTFont, color: NSColor) -> CTLine {
