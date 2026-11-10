@@ -164,7 +164,7 @@ final class WorkspaceViewController: NSViewController {
 
         if timeObserver == nil {
             timeObserver = player.addPeriodicTimeObserver(
-                forInterval: CMTime(seconds: 0.15, preferredTimescale: 600),
+                forInterval: CMTime(value: 1, timescale: 30),
                 queue: .main
             ) { [weak self] _ in
                 Task { @MainActor [weak self] in

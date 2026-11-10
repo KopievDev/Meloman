@@ -362,3 +362,20 @@ Manual checks: loop a short portrait and landscape clip, pause/seek the song,
 switch media sources, save/reopen and re-export. Compare MP4 sound, crop and
 word timing against the preview. GIFs, clip trim and arbitrary overlay layers
 remain separate follow-up milestones.
+
+## Animated GIF backgrounds (PR #14)
+
+Audio-only projects accept **GIF** in **ФОН ДЛЯ АУДИО → Выбрать изображение…**.
+Frames advance from the source GIF delays and follow the song playhead,
+including pause, seek and seamless looping. GIFs are embedded in the existing
+Backgrounds/ directory of portable .meloman packages.
+
+For MP4 export the animation is first encoded as a silent variable-frame-rate
+movie preserving the GIF frame delay timestamps, then looped through the audio
+duration by the AVFoundation background composition. Final export samples frames
+at 30 fps, so timing is quantized to the output frame rate. The soundtrack
+always comes from the music file or chosen instrumental stem, never the GIF.
+
+GIFs with more than 1,200 frames are intentionally rejected in this first
+iteration. Very complex animated GIFs, disposal modes and transparent frames
+should be checked visually on Mac before release.

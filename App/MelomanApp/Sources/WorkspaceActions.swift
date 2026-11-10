@@ -173,6 +173,7 @@ extension WorkspaceViewController {
         timeLabel.stringValue = "\(formatTime(safeTime)) / \(formatTime(duration))"
         playButton.title = player.rate == 0 ? "▶" : "❚❚"
         refreshKaraokePlayhead(safeTime)
+        preview.updateAnimatedGIF(at: safeTime)
         syncBackgroundVideo(to: safeTime)
     }
 
