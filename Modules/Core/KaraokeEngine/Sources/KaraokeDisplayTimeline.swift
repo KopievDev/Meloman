@@ -62,13 +62,14 @@ public enum KaraokeDisplayTimeline {
         to cues: inout [KaraokeDisplayCue]
     ) {
         guard let frame, let line = lines.first(where: { $0.id == frame.lineID }) else { return }
-        if let previous = cues.last,
-           previous.line.id == frame.lineID,
-           previous.slot == placement.slot,
-           previous.end == range.lowerBound {
+        let sameLine = cues.last?.line.id == frame.lineID
+        let sameSlot = cues.last?.slot == placement.slot
+        let contiguous = cues.last?.end == range.lowerBound
+        if sameLine && sameSlot && contiguous {
+            let start = cues[cues.count - 1].start
             cues[cues.count - 1] = KaraokeDisplayCue(
                 line: line, row: placement.role, slot: placement.slot,
-                start: previous.start, end: range.upperBound
+                start: start, end: range.upperBound
             )
         } else {
             cues.append(KaraokeDisplayCue(
