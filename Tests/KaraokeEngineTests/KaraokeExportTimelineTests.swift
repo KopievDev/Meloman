@@ -78,8 +78,8 @@ final class KaraokeExportTimelineTests: XCTestCase {
         let cues = KaraokeDisplayTimeline.cues(from: lyrics, duration: duration)
         let current = cues.filter { $0.row == .current }
         let upcoming = cues.filter { $0.row == .upcoming }
-        XCTAssertEqual(current.map { $0.line.id }, lyrics.map(\.id))
-        XCTAssertEqual(upcoming.map { $0.line.id }, Array(lyrics.dropFirst()).map(\.id))
+        XCTAssertEqual(current.map(\.line.id), lyrics.map(\.id))
+        XCTAssertEqual(upcoming.map(\.line.id), Array(lyrics.dropFirst()).map(\.id))
         XCTAssertEqual(upcoming.first?.start.microseconds, 0)
         XCTAssertEqual(upcoming.first?.end.microseconds, 3_000_000)
         XCTAssertEqual(current[1].start.microseconds, 3_000_000)
