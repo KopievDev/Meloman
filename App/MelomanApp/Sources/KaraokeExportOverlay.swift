@@ -65,27 +65,16 @@ enum KaraokeExportOverlay {
         settings: LineRenderSettings
     ) -> CALayer? {
         let style = settings.style
-        let values = cue.line.words.map { word in
-            if word.isHidden {
-                return "____"
-            }
-            return settings.isPhonetic
-                ? (settings.pronunciation?.text(for: word.id) ?? "")
-                : word.text
-        }
+        let values = renderedValues(for: cue, settings: settings)
         guard values.contains(where: { !$0.isEmpty }) else { return nil }
         let text = values.joined(separator: " ")
         let mainFont = KaraokeStyleRendering.font(for: style, width: size.width)
         let font = settings.isPhonetic
             ? KaraokeStyleRendering.pronunciationFont(for: style, width: size.width)
             : mainFont
-        let normalColor = KaraokeStyleRendering.color(style.textColor)
-        let color: NSColor = if settings.isPhonetic {
-            normalColor.withAlphaComponent(cue.row == .current ? 0.85 : 0.52)
-        } else {
-            cue.row == .current ? normalColor : normalColor.withAlphaComponent(0.68)
-        }
-        let measure = attributedText(text, font: font, color: color)
+        let measure = attributedText(
+            text, font: font, color: rowColor(row: cue.row, settings: settings)
+        )
         let ctLine = CTLineCreateWithAttributedString(measure)
         let width = CGFloat(CTLineGetTypographicBounds(ctLine, nil, nil, nil))
         guard width > 0 else { return nil }
@@ -115,6 +104,28 @@ enum KaraokeExportOverlay {
             )
         }
         return root
+    }
+
+    private static func renderedValues(
+        for cue: KaraokeDisplayCue,
+        settings: LineRenderSettings
+    ) -> [String] {
+        cue.line.words.map { word in
+            if word.isHidden {
+                return "____"
+            }
+            return settings.isPhonetic
+                ? (settings.pronunciation?.text(for: word.id) ?? "")
+                : word.text
+        }
+    }
+
+    private static func rowColor(row: KaraokeDisplayRow, settings: LineRenderSettings) -> NSColor {
+        let normal = KaraokeStyleRendering.color(settings.style.textColor)
+        if settings.isPhonetic {
+            return normal.withAlphaComponent(row == .current ? 0.85 : 0.52)
+        }
+        return row == .current ? normal : normal.withAlphaComponent(0.68)
     }
 
     private static func lineBaseline(

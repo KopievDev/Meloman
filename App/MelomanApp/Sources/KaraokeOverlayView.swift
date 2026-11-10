@@ -53,25 +53,14 @@ final class KaraokeOverlayView: NSView {
         track: KaraokePronunciationTrack?,
         phonetic: Bool = false
     ) {
-        let values = frame.words.map { word in
-            if word.isHidden {
-                return "____"
-            }
-            return phonetic ? (track?.text(for: word.id) ?? "") : word.text
-        }
+        let values = renderedValues(for: frame, track: track, phonetic: phonetic)
         guard values.contains(where: { !$0.isEmpty }) else { return }
         let fullText = values.joined(separator: " ")
         let mainFont = KaraokeStyleRendering.font(for: style, width: bounds.width)
         let font = phonetic
             ? KaraokeStyleRendering.pronunciationFont(for: style, width: bounds.width)
             : mainFont
-        let normalColor = KaraokeStyleRendering.color(style.textColor)
-        let textColor = if phonetic {
-            normalColor.withAlphaComponent(row == .current ? 0.85 : 0.52)
-        } else {
-            row == .current ? normalColor : normalColor.withAlphaComponent(0.68)
-        }
-        let base = createLine(fullText, font: font, color: textColor)
+        let base = createLine(fullText, font: font, color: rowColor(row: row, phonetic: phonetic))
 
         var ascent: CGFloat = 0
         var descent: CGFloat = 0
@@ -80,17 +69,9 @@ final class KaraokeOverlayView: NSView {
 
         let scale = min(1, max(0.01, (bounds.width - 36) / width))
         let originX = max(18, (bounds.width - width * scale) / 2)
-        let fontSize = CGFloat(CTFontGetSize(mainFont))
-        let baselineY = if phonetic {
-            KaraokeStyleRendering.pronunciationBaseline(
-                for: row, style: style, size: bounds.size, mainFontSize: fontSize
-            )
-        } else {
-            KaraokeStyleRendering.baseline(
-                for: row, style: style, size: bounds.size, fontSize: fontSize,
-                pronunciationEnabled: track != nil
-            )
-        }
+        let baselineY = rowBaseline(
+            row: row, phonetic: phonetic, track: track, mainFont: mainFont
+        )
         beginDrawing(context, originX: originX, baselineY: baselineY, scale: scale, line: base)
 
         if row == .current {
@@ -109,6 +90,45 @@ final class KaraokeOverlayView: NSView {
             )
         }
         context.restoreGState()
+    }
+
+    private func renderedValues(
+        for frame: KaraokeFrame,
+        track: KaraokePronunciationTrack?,
+        phonetic: Bool
+    ) -> [String] {
+        frame.words.map { word in
+            if word.isHidden {
+                return "____"
+            }
+            return phonetic ? (track?.text(for: word.id) ?? "") : word.text
+        }
+    }
+
+    private func rowColor(row: KaraokeDisplayRow, phonetic: Bool) -> NSColor {
+        let normal = KaraokeStyleRendering.color(style.textColor)
+        if phonetic {
+            return normal.withAlphaComponent(row == .current ? 0.85 : 0.52)
+        }
+        return row == .current ? normal : normal.withAlphaComponent(0.68)
+    }
+
+    private func rowBaseline(
+        row: KaraokeDisplayRow,
+        phonetic: Bool,
+        track: KaraokePronunciationTrack?,
+        mainFont: CTFont
+    ) -> CGFloat {
+        let fontSize = CGFloat(CTFontGetSize(mainFont))
+        if phonetic {
+            return KaraokeStyleRendering.pronunciationBaseline(
+                for: row, style: style, size: bounds.size, mainFontSize: fontSize
+            )
+        }
+        return KaraokeStyleRendering.baseline(
+            for: row, style: style, size: bounds.size, fontSize: fontSize,
+            pronunciationEnabled: track != nil
+        )
     }
 
     private struct HighlightContent {

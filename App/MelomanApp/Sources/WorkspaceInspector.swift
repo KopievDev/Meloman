@@ -65,16 +65,7 @@ extension WorkspaceViewController {
         let panel = makePanel()
         let heading = label("ТАЙМЛАЙН", size: 11, weight: .semibold, color: .secondaryLabelColor)
         timelineInfo.textColor = .secondaryLabelColor
-        let tracks = NSStackView(views: [
-            label("V1   Видео", size: 12, color: .secondaryLabelColor),
-            label("V3   Графика", size: 12, color: .secondaryLabelColor),
-            label("K1   Караоке", size: 12, color: .secondaryLabelColor),
-            label("K2   Произношение RU", size: 12, color: .secondaryLabelColor),
-            label("A1   Аудио", size: 12, color: .secondaryLabelColor),
-        ])
-        tracks.orientation = .vertical
-        tracks.alignment = .leading
-        tracks.spacing = 12
+        let tracks = makeTimelineTrackLabels()
 
         let wordScroll = makeLyricTimelineScroll()
         let overlayScroll = makeGraphicTimelineScroll()
@@ -120,6 +111,20 @@ extension WorkspaceViewController {
         ])
 
         return panel
+    }
+
+    private func makeTimelineTrackLabels() -> NSStackView {
+        let tracks = NSStackView(views: [
+            label("V1   Видео", size: 12, color: .secondaryLabelColor),
+            label("V3   Графика", size: 12, color: .secondaryLabelColor),
+            label("K1   Караоке", size: 12, color: .secondaryLabelColor),
+            label("K2   Произношение RU", size: 12, color: .secondaryLabelColor),
+            label("A1   Аудио", size: 12, color: .secondaryLabelColor),
+        ])
+        tracks.orientation = .vertical
+        tracks.alignment = .leading
+        tracks.spacing = 12
+        return tracks
     }
 
     private func makeLyricTimelineScroll() -> NSScrollView {
