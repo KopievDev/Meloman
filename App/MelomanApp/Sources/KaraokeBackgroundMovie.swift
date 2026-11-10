@@ -96,7 +96,7 @@ enum KaraokeBackgroundMovie {
             bitmapInfo: bitmapInfo
         ) else { throw KaraokeBackgroundError.cannotCreateFrame }
 
-        let imageSize = CGSize(width: cgImage.width, height: cgImage.height)
+        let imageSize = CGSize(width: CGFloat(cgImage.width), height: CGFloat(cgImage.height))
         let scale = max(size.width / imageSize.width, size.height / imageSize.height)
         let target = CGRect(
             x: (size.width - imageSize.width * scale) / 2,
