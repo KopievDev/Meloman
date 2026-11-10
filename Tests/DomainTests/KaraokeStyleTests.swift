@@ -45,7 +45,7 @@ final class KaraokeStyleTests: XCTestCase {
         XCTAssertEqual(safe.fontSize, 56)
         XCTAssertEqual(safe.verticalPosition, 0.18)
 
-        let oversized = KaraokeStyle(fontSize: 5_000, verticalPosition: 10).sanitized()
+        let oversized = KaraokeStyle(fontSize: 5000, verticalPosition: 10).sanitized()
         XCTAssertEqual(oversized.fontSize, 112)
         XCTAssertEqual(oversized.verticalPosition, 0.85)
     }
