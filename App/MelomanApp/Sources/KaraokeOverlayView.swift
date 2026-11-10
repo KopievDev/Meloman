@@ -54,7 +54,9 @@ final class KaraokeOverlayView: NSView {
         phonetic: Bool = false
     ) {
         let values = frame.words.map { word in
-            if word.isHidden { return "____" }
+            if word.isHidden {
+                return "____"
+            }
             return phonetic ? (track?.text(for: word.id) ?? "") : word.text
         }
         guard values.contains(where: { !$0.isEmpty }) else { return }

@@ -229,7 +229,7 @@ final class ProjectStoreTests: XCTestCase {
         let media = MediaAsset(name: "english.mp3", fileExtension: "mp3", kind: .audio, duration: .zero)
         let word = try XCTUnwrap(LyricWord(
             text: "Look,", start: .zero,
-            end: XCTUnwrap(Timecode(microseconds: 900000))
+            end: XCTUnwrap(Timecode(microseconds: 900_000))
         ))
         var project = MelomanProject(name: "EN + RU", media: [media])
         project.setKaraokeLines([LyricLine(words: [word])], for: media.id)

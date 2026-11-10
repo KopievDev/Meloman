@@ -66,7 +66,9 @@ enum KaraokeExportOverlay {
     ) -> CALayer? {
         let style = settings.style
         let values = cue.line.words.map { word in
-            if word.isHidden { return "____" }
+            if word.isHidden {
+                return "____"
+            }
             return settings.isPhonetic
                 ? (settings.pronunciation?.text(for: word.id) ?? "")
                 : word.text

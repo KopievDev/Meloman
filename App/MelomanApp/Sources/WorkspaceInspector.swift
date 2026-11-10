@@ -81,8 +81,11 @@ extension WorkspaceViewController {
         let pronunciationScroll = makePronunciationTimelineScroll()
 
         let progressPanel = makeAIProgressPanel()
-        for child in [heading, timelineInfo, tracks, overlayScroll, wordScroll, pronunciationScroll,
-                      statusLabel, progressPanel] {
+        let timelineViews = [
+            heading, timelineInfo, tracks, overlayScroll, wordScroll, pronunciationScroll,
+            statusLabel, progressPanel,
+        ]
+        for child in timelineViews {
             child.translatesAutoresizingMaskIntoConstraints = false
             panel.addSubview(child)
         }

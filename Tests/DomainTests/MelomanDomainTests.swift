@@ -127,7 +127,7 @@ final class MelomanDomainTests: XCTestCase {
     func testK2PronunciationPersistsAndSharesEnglishWordIdentity() throws {
         let mediaID = UUID()
         let english = try XCTUnwrap(LyricWord(
-            text: "look", start: .zero, end: XCTUnwrap(Timecode(microseconds: 800000))
+            text: "look", start: .zero, end: XCTUnwrap(Timecode(microseconds: 800_000))
         ))
         var project = MelomanProject(name: "EN with RU hints")
         project.setKaraokeLines([LyricLine(words: [english])], for: mediaID)
@@ -154,7 +154,7 @@ final class MelomanDomainTests: XCTestCase {
         XCTAssertNil(legacy.pronunciation)
     }
 
-    func testWordPronunciationCanBeClearedWithoutTouchingEnglish() throws {
+    func testWordPronunciationCanBeClearedWithoutTouchingEnglish() {
         let wordID = UUID()
         var track = KaraokePronunciationTrack(isEnabled: true)
         track.setText(" ю ", for: wordID)

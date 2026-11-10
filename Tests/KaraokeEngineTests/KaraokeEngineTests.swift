@@ -144,7 +144,7 @@ final class KaraokeEngineTests: XCTestCase {
     }
 
     func testDraftFillsMissingWordsWithoutOverwritingCorrections() throws {
-        let duration = try XCTUnwrap(Timecode(microseconds: 4000000))
+        let duration = try XCTUnwrap(Timecode(microseconds: 4_000_000))
         let lyrics = LyricsDraftBuilder.build(text: "Look, if you had", duration: duration)
         let words = lyrics.flatMap(\.words)
         var track = KaraokePronunciationTrack(isEnabled: true)
@@ -154,7 +154,7 @@ final class KaraokeEngineTests: XCTestCase {
         XCTAssertEqual(result.text(for: words[1].id), "иф")
         XCTAssertEqual(result.text(for: words[2].id), "ю")
         XCTAssertEqual(result.text(for: words[3].id), "хад")
-        XCTAssertFalse(result.words.contains(where: { $0.text.isEmpty }))
+        XCTAssertFalse(result.words.contains(where: \.text.isEmpty))
     }
 
     func testMultiMediaKaraokeDocumentsStayIndependent() throws {
