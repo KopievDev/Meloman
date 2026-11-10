@@ -37,16 +37,18 @@ extension WorkspaceViewController {
         isBusy = true
         setBusyControls()
         displayAIProgress(title: "Экспорт караоке", detail: "Подготовка MP4")
+        let karaoke = KaraokeDocument(
+            mediaID: id,
+            lines: lyrics,
+            style: project.karaokeStyle(for: id)
+        )
+        let useInstrumental = instrumentalCheck.state == .on
         Task { [weak self] in
             await self?.performKaraokeExport(
                 asset: asset,
                 source: source,
-                karaoke: KaraokeDocument(
-                    mediaID: id,
-                    lines: lyrics,
-                    style: project.karaokeStyle(for: id)
-                ),
-                instrumental: instrumentalCheck.state == .on,
+                karaoke: karaoke,
+                instrumental: useInstrumental,
                 destination: output
             )
         }
