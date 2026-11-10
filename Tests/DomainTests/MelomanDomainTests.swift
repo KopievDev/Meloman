@@ -89,6 +89,41 @@ final class MelomanDomainTests: XCTestCase {
         XCTAssertEqual(timing.durations, [0.1, 0.1, 0.1, 0.04])
     }
 
+    func testVisualOverlaysArePerMediaAndTimeBounded() throws {
+        let first = UUID()
+        let second = UUID()
+        let start = try XCTUnwrap(Timecode(microseconds: 2_000_000))
+        let end = try XCTUnwrap(Timecode(microseconds: 5_000_000))
+        let overlay = try XCTUnwrap(VisualOverlay(
+            mediaID: first, fileExtension: "GIF", start: start, end: end
+        ))
+        var project = MelomanProject(name: "Graphics")
+        project.upsertOverlay(overlay)
+        XCTAssertEqual(project.overlays(for: first).map(\.id), [overlay.id])
+        XCTAssertTrue(project.overlays(for: second).isEmpty)
+        XCTAssertTrue(overlay.isActive(at: start))
+        XCTAssertFalse(overlay.isActive(at: end))
+        XCTAssertEqual(overlay.packagedFilename, "\(overlay.id.uuidString).gif")
+
+        let restored = try JSONDecoder().decode(MelomanProject.self, from: JSONEncoder().encode(project))
+        XCTAssertEqual(restored.overlays(for: first), [overlay])
+        project.removeOverlay(overlay.id)
+        XCTAssertTrue(project.overlays(for: first).isEmpty)
+    }
+
+    func testInvalidVisualOverlayValuesRejected() throws {
+        let start = Timecode.zero
+        let end = try XCTUnwrap(Timecode(microseconds: 1_000_000))
+        XCTAssertNil(VisualOverlay(mediaID: UUID(), fileExtension: "svg", start: start, end: end))
+        XCTAssertNil(VisualOverlay(mediaID: UUID(), fileExtension: "png", start: end, end: start))
+        XCTAssertNil(VisualOverlay(
+            mediaID: UUID(), fileExtension: "png", start: start, end: end, width: 1.2
+        ))
+        XCTAssertNil(VisualOverlay(
+            mediaID: UUID(), fileExtension: "png", start: start, end: end, centerX: .nan
+        ))
+    }
+
     func testProjectJSONRoundTripPreservesLyricsAndTracks() throws {
         let start = try XCTUnwrap(Timecode(microseconds: 100_000))
         let end = try XCTUnwrap(Timecode(microseconds: 750_000))
