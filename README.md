@@ -4,7 +4,7 @@
 
 See the [MVP roadmap](docs/ROADMAP.md) for product scope and planned milestones.
 
-> **Status:** PR #11 introduces per-track karaoke appearance editing (fonts, colors, text size, and vertical placement) shared by preview and MP4 export. Arbitrary background and GIF layers remain future milestones.
+> **Status:** Native MP4 export, per-media karaoke style controls, and audio-only still-image backgrounds are implemented. GIF and multi-layer editing are future milestones.
 
 ## Requirements
 
@@ -328,3 +328,18 @@ Future modules (AIContracts, TimelineEngine, CompositionRenderer, ExportEngine, 
 ## CI
 
 The `CI` GitHub Actions workflow runs SwiftFormat, SwiftLint, Tuist generation, macOS unit tests, and an unsigned Release app build on pull requests and pushes to `master`. No Tuist account or cloud cache is required.
+
+## Custom backgrounds for audio-only media (PR #12)
+
+Select an MP3/M4A/WAV/AIFF in the media library. Under **ФОН ДЛЯ АУДИО** choose
+**Выбрать изображение…** to use a PNG, JPEG or HEIC instead of a black background.
+The image is centered and cropped to fill the 16:9 preview and 1280×720 MP4 frame.
+The karaoke overlay remains on top and the original audio stays unchanged.
+Use **Сбросить фон** to return to black. Save the project to embed the image in
+`Backgrounds/` inside the portable `.meloman` package; reopen the project
+or move it to another Mac without requiring the original image path.
+
+This first step supports static images for **audio-only** items; source videos
+continue to use their own footage. GIF/video backgrounds, image transitions,
+and multiple visual layers are separate upcoming features. For QA, compare
+preview and exported MP4 on a portrait photo and after saving/reopening a project.

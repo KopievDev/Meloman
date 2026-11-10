@@ -30,7 +30,7 @@ private struct MovieTrackLayout {
 }
 
 /// Native offline rendering. Existing source assets are never overwritten.
-/// Videos preserve their source footage and audio; audio-only imports gain a black background.
+/// Videos preserve source footage and audio; audio-only imports gain an optional still-image background.
 @MainActor
 final class KaraokeMovieExporter {
     var onProgress: ((String, String, Double?) -> Void)?
@@ -40,6 +40,7 @@ final class KaraokeMovieExporter {
         media: MediaAsset,
         karaoke: KaraokeDocument,
         instrumental: URL?,
+        backgroundImage: URL?,
         to destination: URL
     ) async throws {
         let seconds = Double(media.duration.microseconds) / 1_000_000
@@ -54,10 +55,15 @@ final class KaraokeMovieExporter {
 
         let videoURL: URL
         if media.kind == .audio {
-            onProgress?("Подготовка видео", "Создание чёрного фона для аудиотрека", nil)
+            onProgress?(
+                "Подготовка видео",
+                backgroundImage == nil ? "Создание чёрного фона" : "Подготовка изображения фона",
+                nil
+            )
             videoURL = try await KaraokeBackgroundMovie.make(
                 duration: mediaDuration,
-                at: working.appendingPathComponent("background.mov")
+                at: working.appendingPathComponent("background.mov"),
+                imageURL: backgroundImage
             )
         } else {
             videoURL = source

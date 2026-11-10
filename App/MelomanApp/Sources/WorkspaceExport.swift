@@ -43,12 +43,14 @@ extension WorkspaceViewController {
             style: project.karaokeStyle(for: id)
         )
         let useInstrumental = instrumentalCheck.state == .on
+        let backgroundImage = asset.kind == .audio ? backgroundURLs[id] : nil
         Task { [weak self] in
             await self?.performKaraokeExport(
                 asset: asset,
                 source: source,
                 karaoke: karaoke,
                 instrumental: useInstrumental,
+                backgroundImage: backgroundImage,
                 destination: output
             )
         }
@@ -59,6 +61,7 @@ extension WorkspaceViewController {
         source: URL,
         karaoke: KaraokeDocument,
         instrumental: Bool,
+        backgroundImage: URL?,
         destination: URL
     ) async {
         var temporaryAudio: URL?
@@ -90,6 +93,7 @@ extension WorkspaceViewController {
                 media: asset,
                 karaoke: karaoke,
                 instrumental: audioURL,
+                backgroundImage: backgroundImage,
                 to: destination
             )
             displayAIProgress(
