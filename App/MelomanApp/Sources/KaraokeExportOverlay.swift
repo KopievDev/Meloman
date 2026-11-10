@@ -136,11 +136,11 @@ enum KaraokeExportOverlay {
         let fontSize = CGFloat(CTFontGetSize(KaraokeStyleRendering.font(for: settings.style, width: size.width)))
         if settings.isPhonetic {
             return KaraokeStyleRendering.pronunciationBaseline(
-                for: cue.row, style: settings.style, size: size, mainFontSize: fontSize
+                for: cue.slot, style: settings.style, size: size, mainFontSize: fontSize
             )
         }
         return KaraokeStyleRendering.baseline(
-            for: cue.row, style: settings.style, size: size,
+            for: cue.slot, style: settings.style, size: size,
             fontSize: fontSize, pronunciationEnabled: settings.pronunciation != nil
         )
     }

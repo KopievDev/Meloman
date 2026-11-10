@@ -407,3 +407,18 @@ non-destructively copied to `Overlays/` in saved portable `.meloman`
 projects, including multiple GIFs. Existing projects with no overlays remain
 compatible. Check animated GIF transparency and MP4 timing visually before
 merging this development PR.
+
+## Alternating fixed lyric rows (PR #19)
+
+Instead of moving the next line to the upper slot, K1 and K2 alternate which
+of two fixed subtitle slots is active. When the lower preview lyric becomes
+current, it stays exactly where it was; its word highlight turns on, while the
+completed upper lyric is replaced with the next upcoming text. Subsequent
+phrases alternate in the opposite direction. This makes repeated lyrics like
+"Down, down, down" visually unambiguous: the active yellow highlight changes
+rows rather than showing an apparently unchanged first line.
+
+The preview and MP4 share slot parity from the sorted original lyric start
+times and use the existing K1 word timings for Russian K2. Pause, seek, AI
+alignment with nonmonotonic word times, song gaps and legacy .meloman files
+keep the same behavior. No persisted project format or style setting changes.

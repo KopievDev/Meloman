@@ -33,22 +33,26 @@ final class KaraokeOverlayView: NSView {
         let display = KaraokeDisplayEngine.frame(at: playhead, lines: lyrics)
         let track = pronunciation.isEnabled ? pronunciation : nil
         if let current = display.current {
-            drawRow(current, row: .current, in: context, track: track)
+            let placement: RowPlacement = (.current, display.currentSlot)
+            drawRow(current, placement: placement, in: context, track: track)
             if track != nil {
-                drawRow(current, row: .current, in: context, track: track, phonetic: true)
+                drawRow(current, placement: placement, in: context, track: track, phonetic: true)
             }
         }
         if let upcoming = display.upcoming {
-            drawRow(upcoming, row: .upcoming, in: context, track: track)
+            let placement: RowPlacement = (.upcoming, display.upcomingSlot)
+            drawRow(upcoming, placement: placement, in: context, track: track)
             if track != nil {
-                drawRow(upcoming, row: .upcoming, in: context, track: track, phonetic: true)
+                drawRow(upcoming, placement: placement, in: context, track: track, phonetic: true)
             }
         }
     }
 
+    private typealias RowPlacement = (role: KaraokeDisplayRow, slot: KaraokeDisplaySlot)
+
     private func drawRow(
         _ frame: KaraokeFrame,
-        row: KaraokeDisplayRow,
+        placement: RowPlacement,
         in context: CGContext,
         track: KaraokePronunciationTrack?,
         phonetic: Bool = false
@@ -60,7 +64,7 @@ final class KaraokeOverlayView: NSView {
         let font = phonetic
             ? KaraokeStyleRendering.pronunciationFont(for: style, width: bounds.width)
             : mainFont
-        let base = createLine(fullText, font: font, color: rowColor(row: row, phonetic: phonetic))
+        let base = createLine(fullText, font: font, color: rowColor(row: placement.role, phonetic: phonetic))
 
         var ascent: CGFloat = 0
         var descent: CGFloat = 0
@@ -70,11 +74,11 @@ final class KaraokeOverlayView: NSView {
         let scale = min(1, max(0.01, (bounds.width - 36) / width))
         let originX = max(18, (bounds.width - width * scale) / 2)
         let baselineY = rowBaseline(
-            row: row, phonetic: phonetic, track: track, mainFont: mainFont
+            slot: placement.slot, phonetic: phonetic, track: track, mainFont: mainFont
         )
         beginDrawing(context, originX: originX, baselineY: baselineY, scale: scale, line: base)
 
-        if row == .current {
+        if placement.role == .current {
             let color = KaraokeStyleRendering.color(style.highlightColor)
             let fill = createLine(fullText, font: font, color: phonetic ? color.withAlphaComponent(0.85) : color)
             drawHighlights(
@@ -114,7 +118,7 @@ final class KaraokeOverlayView: NSView {
     }
 
     private func rowBaseline(
-        row: KaraokeDisplayRow,
+        slot: KaraokeDisplaySlot,
         phonetic: Bool,
         track: KaraokePronunciationTrack?,
         mainFont: CTFont
@@ -122,11 +126,11 @@ final class KaraokeOverlayView: NSView {
         let fontSize = CGFloat(CTFontGetSize(mainFont))
         if phonetic {
             return KaraokeStyleRendering.pronunciationBaseline(
-                for: row, style: style, size: bounds.size, mainFontSize: fontSize
+                for: slot, style: style, size: bounds.size, mainFontSize: fontSize
             )
         }
         return KaraokeStyleRendering.baseline(
-            for: row, style: style, size: bounds.size, fontSize: fontSize,
+            for: slot, style: style, size: bounds.size, fontSize: fontSize,
             pronunciationEnabled: track != nil
         )
     }
