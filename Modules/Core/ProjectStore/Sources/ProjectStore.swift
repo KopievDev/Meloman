@@ -7,6 +7,8 @@ public enum ProjectStoreError: LocalizedError {
     case invalidFileExtension(String)
     case missingSource(String)
     case missingMedia(String)
+    case invalidBackgroundExtension(String)
+    case missingBackground(String)
 
     public var errorDescription: String? {
         switch self {
@@ -20,6 +22,10 @@ public enum ProjectStoreError: LocalizedError {
             "Не удалось найти исходный файл: \(name)."
         case let .missingMedia(name):
             "Файл внутри проекта отсутствует: \(name)."
+        case let .invalidBackgroundExtension(value):
+            "Неподдерживаемое расширение фона: \(value)."
+        case let .missingBackground(name):
+            "Не удалось найти изображение фона: \(name)."
         }
     }
 }
@@ -27,10 +33,16 @@ public enum ProjectStoreError: LocalizedError {
 public struct ProjectBundle: Sendable {
     public let project: MelomanProject
     public let mediaURLs: [UUID: URL]
+    public let backgroundURLs: [UUID: URL]
 
-    public init(project: MelomanProject, mediaURLs: [UUID: URL]) {
+    public init(
+        project: MelomanProject,
+        mediaURLs: [UUID: URL],
+        backgroundURLs: [UUID: URL] = [:]
+    ) {
         self.project = project
         self.mediaURLs = mediaURLs
+        self.backgroundURLs = backgroundURLs
     }
 }
 
@@ -57,8 +69,10 @@ public struct ProjectStore: Sendable {
         let parent = destination.deletingLastPathComponent()
         let staging = parent.appendingPathComponent(".meloman-\(UUID().uuidString)-staging", isDirectory: true)
         let mediaDirectory = staging.appendingPathComponent("Media", isDirectory: true)
+        let backgroundsDirectory = staging.appendingPathComponent("Backgrounds", isDirectory: true)
 
         try manager.createDirectory(at: mediaDirectory, withIntermediateDirectories: true)
+        try manager.createDirectory(at: backgroundsDirectory, withIntermediateDirectories: true)
         defer { try? manager.removeItem(at: staging) }
 
         var packagedURLs: [UUID: URL] = [:]
@@ -75,6 +89,24 @@ public struct ProjectStore: Sendable {
             packagedURLs[media.id] = destination
                 .appendingPathComponent("Media", isDirectory: true)
                 .appendingPathComponent(media.packagedFilename)
+        }
+
+        var packagedBackgroundURLs: [UUID: URL] = [:]
+        for background in bundle.project.backgroundImages ?? [] {
+            guard ["png", "jpg", "jpeg", "heic"].contains(background.fileExtension) else {
+                throw ProjectStoreError.invalidBackgroundExtension(background.fileExtension)
+            }
+            guard let source = bundle.backgroundURLs[background.mediaID],
+                  manager.fileExists(atPath: source.path)
+            else {
+                throw ProjectStoreError.missingBackground(background.packagedFilename)
+            }
+
+            let file = backgroundsDirectory.appendingPathComponent(background.packagedFilename)
+            try manager.copyItem(at: source, to: file)
+            packagedBackgroundURLs[background.mediaID] = destination
+                .appendingPathComponent("Backgrounds", isDirectory: true)
+                .appendingPathComponent(background.packagedFilename)
         }
 
         let encoder = JSONEncoder()
@@ -99,7 +131,11 @@ public struct ProjectStore: Sendable {
             try manager.moveItem(at: staging, to: destination)
         }
 
-        return ProjectBundle(project: bundle.project, mediaURLs: packagedURLs)
+        return ProjectBundle(
+            project: bundle.project,
+            mediaURLs: packagedURLs,
+            backgroundURLs: packagedBackgroundURLs
+        )
     }
 
     public func open(at url: URL) throws -> ProjectBundle {
@@ -127,6 +163,24 @@ public struct ProjectStore: Sendable {
             mediaURLs[asset.id] = mediaURL
         }
 
-        return ProjectBundle(project: manifest.project, mediaURLs: mediaURLs)
+        var backgroundURLs: [UUID: URL] = [:]
+        for background in manifest.project.backgroundImages ?? [] {
+            guard ["png", "jpg", "jpeg", "heic"].contains(background.fileExtension) else {
+                throw ProjectStoreError.invalidBackgroundExtension(background.fileExtension)
+            }
+            let file = url
+                .appendingPathComponent("Backgrounds", isDirectory: true)
+                .appendingPathComponent(background.packagedFilename)
+            guard FileManager.default.fileExists(atPath: file.path) else {
+                throw ProjectStoreError.missingBackground(background.packagedFilename)
+            }
+            backgroundURLs[background.mediaID] = file
+        }
+
+        return ProjectBundle(
+            project: manifest.project,
+            mediaURLs: mediaURLs,
+            backgroundURLs: backgroundURLs
+        )
     }
 }
