@@ -1,5 +1,6 @@
 import AppKit
 import AVFoundation
+import MelomanDomain
 
 /// Black canvas for audio-only projects, AVPlayerLayer for video.
 @MainActor
@@ -7,6 +8,11 @@ final class MediaPreviewView: NSView {
     let playerLayer = AVPlayerLayer()
     let imageLayer = CALayer()
     let backgroundVideoLayer = AVPlayerLayer()
+    let visualOverlayRoot = CALayer()
+    var visualItems: [VisualOverlay] = []
+    var visualImageLayers: [UUID: CALayer] = [:]
+    var visualGIFFrames: [UUID: KaraokeGIFFrames] = [:]
+    var visualImageSizes: [UUID: CGSize] = [:]
     let karaokeOverlay = KaraokeOverlayView()
 
     var backgroundGIF: KaraokeGIFFrames? {
@@ -44,6 +50,8 @@ final class MediaPreviewView: NSView {
         imageLayer.frame = bounds
         backgroundVideoLayer.frame = bounds
         playerLayer.frame = bounds
+        visualOverlayRoot.frame = bounds
+        layoutVisualOverlays()
     }
 
     private func configureLayer() {
@@ -57,6 +65,8 @@ final class MediaPreviewView: NSView {
         layer?.addSublayer(backgroundVideoLayer)
         playerLayer.videoGravity = .resizeAspect
         layer?.addSublayer(playerLayer)
+        visualOverlayRoot.masksToBounds = true
+        layer?.addSublayer(visualOverlayRoot)
         karaokeOverlay.translatesAutoresizingMaskIntoConstraints = false
         addSubview(karaokeOverlay)
         NSLayoutConstraint.activate([
