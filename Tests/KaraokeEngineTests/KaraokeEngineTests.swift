@@ -55,6 +55,43 @@ final class KaraokeEngineTests: XCTestCase {
         XCTAssertEqual(lines[1].words.last?.end, duration)
     }
 
+    func testLineStillAppearsWhenAlignedWordTimesAreOutOfOrder() throws {
+        func word(_ text: String, _ begin: Int64, _ finish: Int64) throws -> LyricWord {
+            try XCTUnwrap(LyricWord(
+                text: text,
+                start: XCTUnwrap(Timecode(microseconds: begin)),
+                end: XCTUnwrap(Timecode(microseconds: finish))
+            ))
+        }
+        let line = try LyricLine(words: [
+            word("Ночь", 30_000_000, 30_300_000),
+            word("и", 28_000_000, 28_200_000),
+            word("огни", 29_575_000, 30_056_000),
+        ])
+        let earlier = try XCTUnwrap(Timecode(microseconds: 29_700_000))
+        let later = try XCTUnwrap(Timecode(microseconds: 30_100_000))
+        XCTAssertEqual(KaraokeEngine.frame(at: earlier, lines: [line])?.lineID, line.id)
+        XCTAssertEqual(KaraokeEngine.frame(at: later, lines: [line])?.lineID, line.id)
+    }
+
+    func testOverlappingLinesPreferTheOneWithTheLatestActiveWord() throws {
+        func word(_ text: String, _ from: Int64, _ until: Int64) throws -> LyricWord {
+            try XCTUnwrap(LyricWord(
+                text: text,
+                start: XCTUnwrap(Timecode(microseconds: from)),
+                end: XCTUnwrap(Timecode(microseconds: until))
+            ))
+        }
+        let previous = try LyricLine(words: [
+            word("Раньше", 24_000_000, 34_000_000),
+        ])
+        let current = try LyricLine(words: [
+            word("Сейчас", 29_575_000, 30_056_000),
+        ])
+        let time = try XCTUnwrap(Timecode(microseconds: 29_700_000))
+        XCTAssertEqual(KaraokeEngine.frame(at: time, lines: [previous, current])?.lineID, current.id)
+    }
+
     func testMultiMediaKaraokeDocumentsStayIndependent() throws {
         let firstID = UUID()
         let secondID = UUID()
