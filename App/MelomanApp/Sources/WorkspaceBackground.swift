@@ -49,7 +49,7 @@ extension WorkspaceViewController {
         preview.playerLayer.isHidden = isAudio
         let imageURL = isAudio ? selectedMediaID.flatMap { backgroundURLs[$0] } : nil
         preview.backgroundImage = imageURL.flatMap { NSImage(contentsOf: $0) }
-        previewHint.stringValue = if isAudio && imageURL == nil {
+        previewHint.stringValue = if isAudio, imageURL == nil {
             selected.map { "♫  \($0.name)" } ?? ""
         } else {
             ""
