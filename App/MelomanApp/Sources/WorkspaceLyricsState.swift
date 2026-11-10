@@ -9,6 +9,7 @@ extension WorkspaceViewController {
         let lyrics = mediaID.map { project.karaokeLines(for: $0) } ?? []
         preview.karaokeOverlay.lyrics = lyrics
         preview.karaokeOverlay.style = mediaID.map { project.karaokeStyle(for: $0) } ?? .init()
+        preview.karaokeOverlay.pronunciation = mediaID.map { project.karaokePronunciation(for: $0) } ?? .init()
         refreshStyleControls()
         lyricStrip.lines = lyrics
         lyricStrip.duration = project.media.first(where: { $0.id == mediaID })?.duration ?? .zero
@@ -20,7 +21,13 @@ extension WorkspaceViewController {
             selectedWordID = words.first?.id
         }
         lyricStrip.selectedWordID = selectedWordID
+        pronunciationStrip.lines = lyrics
+        pronunciationStrip.duration = lyricStrip.duration
+        pronunciationStrip.pronunciation = mediaID.map { project.karaokePronunciation(for: $0) }
+        pronunciationStrip.setFrameSize(NSSize(width: max(660, seconds * 45), height: 32))
+        pronunciationStrip.selectedWordID = selectedWordID
         displaySelectedLyricWord()
+        refreshPronunciationControls()
 
         karaokeButton.isEnabled = mediaID != nil && !isBusy
         recognizeButton.isEnabled = mediaID != nil && !isBusy
@@ -39,6 +46,7 @@ extension WorkspaceViewController {
             lyricHiddenCheck.state = .off
             applyLyricButton.isEnabled = false
             lyricSelectionInfo.stringValue = "Вставьте текст песни"
+            pronunciationWordField.stringValue = ""
             return
         }
 
@@ -49,6 +57,9 @@ extension WorkspaceViewController {
         applyLyricButton.isEnabled = true
         let selectedIndex = (words.firstIndex(where: { $0.id == word.id }) ?? 0) + 1
         lyricSelectionInfo.stringValue = "Слово \(selectedIndex) из \(words.count)"
+        pronunciationWordField.stringValue = selectedMediaID.flatMap { mediaID in
+            project.karaokePronunciation(for: mediaID).text(for: word.id)
+        } ?? ""
     }
 
     func refreshKaraokePlayhead(_ seconds: Double) {
@@ -57,5 +68,6 @@ extension WorkspaceViewController {
         else { return }
         preview.karaokeOverlay.playhead = timecode
         lyricStrip.playhead = timecode
+        pronunciationStrip.playhead = timecode
     }
 }

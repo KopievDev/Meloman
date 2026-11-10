@@ -47,7 +47,8 @@ extension WorkspaceViewController {
         let karaoke = KaraokeDocument(
             mediaID: id,
             lines: lyrics,
-            style: project.karaokeStyle(for: id)
+            style: project.karaokeStyle(for: id),
+            pronunciation: project.karaokePronunciation(for: id)
         )
         let selection = KaraokeExportSelection(
             instrumental: instrumentalCheck.state == .on,

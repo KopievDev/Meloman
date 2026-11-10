@@ -200,6 +200,7 @@ extension WorkspaceViewController {
         refreshStyleControls()
         refreshBackgroundControls()
         refreshVisualOverlayControls()
+        refreshPronunciationControls()
     }
 
     func showError(_ message: String) {
