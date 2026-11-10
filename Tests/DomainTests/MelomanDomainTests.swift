@@ -72,6 +72,23 @@ final class MelomanDomainTests: XCTestCase {
         XCTAssertNil(restored.backgroundVideos)
     }
 
+    func testGIFPlaybackTimingRespectsFrameDelayAndLoops() {
+        let timing = GIFPlaybackTiming(frameDurations: [0.1, 0.25, 0.05])
+        XCTAssertEqual(timing.totalDuration, 0.4, accuracy: 0.000_001)
+        XCTAssertEqual(timing.frameIndex(at: 0), 0)
+        XCTAssertEqual(timing.frameIndex(at: 0.2), 1)
+        XCTAssertEqual(timing.frameIndex(at: 0.38), 2)
+        XCTAssertEqual(timing.frameIndex(at: 0.41), 0)
+        XCTAssertEqual(timing.frameIndex(at: 0.6), 1)
+        XCTAssertNil(timing.frameIndex(at: .infinity))
+        XCTAssertNil(GIFPlaybackTiming(frameDurations: []).frameIndex(at: 0))
+    }
+
+    func testInvalidGIFDelaysGetSafeFallbacks() {
+        let timing = GIFPlaybackTiming(frameDurations: [0, -1, .nan, 0.04])
+        XCTAssertEqual(timing.durations, [0.1, 0.1, 0.1, 0.04])
+    }
+
     func testProjectJSONRoundTripPreservesLyricsAndTracks() throws {
         let start = try XCTUnwrap(Timecode(microseconds: 100_000))
         let end = try XCTUnwrap(Timecode(microseconds: 750_000))

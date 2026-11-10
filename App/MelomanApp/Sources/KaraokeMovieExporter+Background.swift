@@ -13,7 +13,7 @@ extension KaraokeMovieExporter {
         }
         let range = try await source.load(.timeRange)
         let available = range.duration
-        guard available.isNumeric, available.seconds.isFinite, available.seconds >= 0.5 else {
+        guard available.isNumeric, available.seconds.isFinite, available.seconds > 0 else {
             throw KaraokeVideoExportError.invalidBackgroundVideo
         }
         guard let target = composition.addMutableTrack(

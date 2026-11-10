@@ -152,6 +152,32 @@ final class ProjectStoreTests: XCTestCase {
         XCTAssertThrowsError(try ProjectStore().open(at: path))
     }
 
+    func testGIFBackgroundIsStoredInsidePackage() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        let audio = folder.appendingPathComponent("song.wav")
+        let gif = folder.appendingPathComponent("animation.gif")
+        try Data("music".utf8).write(to: audio)
+        let bytes = Data("GIF89a example bytes".utf8)
+        try bytes.write(to: gif)
+        let asset = MediaAsset(name: "song.wav", fileExtension: "wav", kind: .audio, duration: .zero)
+        var project = MelomanProject(name: "GIF Background", media: [asset])
+        project.setBackgroundImage(MediaBackgroundImage(mediaID: asset.id, fileExtension: "gif"), for: asset.id)
+
+        let path = folder.appendingPathComponent("GIF.meloman")
+        let saved = try ProjectStore().save(
+            ProjectBundle(project: project, mediaURLs: [asset.id: audio], backgroundURLs: [asset.id: gif]),
+            to: path
+        )
+        try FileManager.default.removeItem(at: gif)
+        let reopened = try ProjectStore().open(at: path)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(saved.backgroundURLs[asset.id])), bytes)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.backgroundURLs[asset.id])), bytes)
+        XCTAssertEqual(reopened.project.backgroundImage(for: asset.id)?.fileExtension, "gif")
+    }
+
     func testProjectMustUseMelomanExtension() {
         let invalid = FileManager.default.temporaryDirectory.appendingPathComponent("not-a-package.zip")
         XCTAssertThrowsError(try ProjectStore().open(at: invalid))

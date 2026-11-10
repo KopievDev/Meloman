@@ -60,7 +60,8 @@ final class KaraokeMovieExporter {
         try FileManager.default.createDirectory(at: working, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: working) }
 
-        let loopedVideo = media.kind == .audio && sources.backgroundVideo != nil
+        let isGIF = sources.backgroundImage?.pathExtension.lowercased() == "gif"
+        let loopedVideo = media.kind == .audio && (sources.backgroundVideo != nil || isGIF)
         let videoURL = try await prepareVideoURL(
             original: source,
             kind: media.kind,
@@ -107,6 +108,13 @@ final class KaraokeMovieExporter {
         if let movie = sources.backgroundVideo {
             onProgress?("Подготовка видео", "Видеофон повторяется до конца песни", nil)
             return movie
+        }
+        if let image = sources.backgroundImage, image.pathExtension.lowercased() == "gif" {
+            onProgress?("Подготовка GIF", "Кодирование кадров с исходными задержками", nil)
+            return try await KaraokeGIFMovie.make(
+                source: image,
+                at: working.appendingPathComponent("animation.mov")
+            )
         }
         onProgress?(
             "Подготовка видео",

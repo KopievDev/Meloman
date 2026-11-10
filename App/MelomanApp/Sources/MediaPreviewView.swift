@@ -9,6 +9,20 @@ final class MediaPreviewView: NSView {
     let backgroundVideoLayer = AVPlayerLayer()
     let karaokeOverlay = KaraokeOverlayView()
 
+    var backgroundGIF: KaraokeGIFFrames? {
+        didSet {
+            imageLayer.contents = backgroundGIF?.frame(at: 0)
+        }
+    }
+
+    func updateAnimatedGIF(at seconds: Double) {
+        guard let backgroundGIF else { return }
+        let index = backgroundGIF.timing.frameIndex(at: seconds)
+        if index != backgroundGIF.lastDisplayedIndex {
+            imageLayer.contents = backgroundGIF.frame(at: seconds)
+        }
+    }
+
     var backgroundImage: NSImage? {
         didSet {
             imageLayer.contents = backgroundImage?.cgImage(forProposedRect: nil, context: nil, hints: nil)

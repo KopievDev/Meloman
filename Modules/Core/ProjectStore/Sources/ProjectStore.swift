@@ -147,7 +147,7 @@ public struct ProjectStore: Sendable {
 
         var backgroundURLs: [UUID: URL] = [:]
         for background in manifest.project.backgroundImages ?? [] {
-            guard ["png", "jpg", "jpeg", "heic"].contains(background.fileExtension) else {
+            guard ["png", "jpg", "jpeg", "heic", "gif"].contains(background.fileExtension) else {
                 throw ProjectStoreError.invalidBackgroundExtension(background.fileExtension)
             }
             let file = url
@@ -218,7 +218,7 @@ public struct ProjectStore: Sendable {
         let manager = FileManager.default
         var packagedBackgroundURLs: [UUID: URL] = [:]
         for background in bundle.project.backgroundImages ?? [] {
-            guard ["png", "jpg", "jpeg", "heic"].contains(background.fileExtension) else {
+            guard ["png", "jpg", "jpeg", "heic", "gif"].contains(background.fileExtension) else {
                 throw ProjectStoreError.invalidBackgroundExtension(background.fileExtension)
             }
             guard let source = bundle.backgroundURLs[background.mediaID],

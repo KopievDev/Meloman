@@ -56,7 +56,15 @@ extension WorkspaceViewController {
         preview.playerLayer.isHidden = isAudio
         let videoURL = isAudio ? selectedMediaID.flatMap { backgroundVideoURLs[$0] } : nil
         let imageURL = isAudio && videoURL == nil ? selectedMediaID.flatMap { backgroundURLs[$0] } : nil
-        preview.backgroundImage = imageURL.flatMap { NSImage(contentsOf: $0) }
+        preview.backgroundGIF = nil
+        preview.backgroundImage = nil
+        if let imageURL {
+            if imageURL.pathExtension.lowercased() == "gif" {
+                preview.backgroundGIF = KaraokeGIFFrames(url: imageURL)
+            } else {
+                preview.backgroundImage = NSImage(contentsOf: imageURL)
+            }
+        }
         configureBackgroundVideo(videoURL)
         previewHint.stringValue = if isAudio, imageURL == nil, videoURL == nil {
             selected.map { "♫  \($0.name)" } ?? ""
@@ -73,12 +81,18 @@ extension WorkspaceViewController {
 
         let panel = NSOpenPanel()
         panel.message = "Выберите изображение для фона караоке"
-        panel.allowedContentTypes = [.png, .jpeg, .heic]
+        panel.allowedContentTypes = [.png, .jpeg, .heic, .gif]
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        guard let image = NSImage(contentsOf: url),
-              image.cgImage(forProposedRect: nil, context: nil, hints: nil) != nil
+        let valid = if url.pathExtension.lowercased() == "gif" {
+            KaraokeGIFFrames(url: url) != nil
+        } else if let image = NSImage(contentsOf: url) {
+            image.cgImage(forProposedRect: nil, context: nil, hints: nil) != nil
+        } else {
+            false
+        }
+        guard valid
         else {
-            showError("Не удалось открыть изображение фона.")
+            showError("Не удалось открыть изображение или GIF фона.")
             return
         }
 
