@@ -79,6 +79,7 @@ extension WorkspaceViewController {
             preview.backgroundImage = nil
             previewHint.stringValue = "Импортируйте аудио или видео"
             refreshBackgroundControls()
+            refreshVisualOverlays()
             playButton.isEnabled = false
             seekSlider.isEnabled = false
             inspectorInfo.stringValue = "Выберите файл в медиатеке"
@@ -102,6 +103,7 @@ extension WorkspaceViewController {
         timelineInfo.stringValue = "Выбран: \(selected.name)"
         updateStemButtons()
         refreshBackgroundControls()
+        refreshVisualOverlays()
         refreshKaraoke()
         updatePlaybackUI()
     }
@@ -174,6 +176,8 @@ extension WorkspaceViewController {
         playButton.title = player.rate == 0 ? "▶" : "❚❚"
         refreshKaraokePlayhead(safeTime)
         preview.updateAnimatedGIF(at: safeTime)
+        preview.updateVisualOverlays(at: safeTime)
+        visualOverlayStrip.playhead = Timecode(microseconds: Int64((safeTime * 1_000_000).rounded())) ?? .zero
         syncBackgroundVideo(to: safeTime)
     }
 
@@ -195,6 +199,7 @@ extension WorkspaceViewController {
         updateStemButtons()
         refreshStyleControls()
         refreshBackgroundControls()
+        refreshVisualOverlayControls()
     }
 
     func showError(_ message: String) {

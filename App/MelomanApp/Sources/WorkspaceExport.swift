@@ -7,6 +7,7 @@ struct KaraokeExportSelection {
     let instrumental: Bool
     let backgroundImage: URL?
     let backgroundVideo: URL?
+    let overlays: [KaraokeOverlayAsset]
 }
 
 @MainActor
@@ -51,7 +52,10 @@ extension WorkspaceViewController {
         let selection = KaraokeExportSelection(
             instrumental: instrumentalCheck.state == .on,
             backgroundImage: asset.kind == .audio ? backgroundURLs[id] : nil,
-            backgroundVideo: asset.kind == .audio ? backgroundVideoURLs[id] : nil
+            backgroundVideo: asset.kind == .audio ? backgroundVideoURLs[id] : nil,
+            overlays: project.overlays(for: id).compactMap { overlay in
+                overlayURLs[overlay.id].map { KaraokeOverlayAsset(overlay: overlay, url: $0) }
+            }
         )
         Task { [weak self] in
             await self?.performKaraokeExport(
@@ -102,7 +106,8 @@ extension WorkspaceViewController {
                 sources: KaraokeMovieSources(
                     instrumental: audioURL,
                     backgroundImage: selection.backgroundImage,
-                    backgroundVideo: selection.backgroundVideo
+                    backgroundVideo: selection.backgroundVideo,
+                    overlays: selection.overlays
                 ),
                 to: destination
             )

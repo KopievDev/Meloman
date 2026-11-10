@@ -178,6 +178,47 @@ final class ProjectStoreTests: XCTestCase {
         XCTAssertEqual(reopened.project.backgroundImage(for: asset.id)?.fileExtension, "gif")
     }
 
+    func testMultipleVisualOverlaysSurvivePortableSaveAndResave() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let audio = directory.appendingPathComponent("song.wav")
+        let png = directory.appendingPathComponent("logo.png")
+        let gif = directory.appendingPathComponent("sparkle.gif")
+        try Data("audio".utf8).write(to: audio)
+        try Data("logo".utf8).write(to: png)
+        try Data("animated".utf8).write(to: gif)
+
+        let media = MediaAsset(name: "song.wav", fileExtension: "wav", kind: .audio, duration: .zero)
+        let end = try XCTUnwrap(Timecode(microseconds: 5_000_000))
+        let first = try XCTUnwrap(VisualOverlay(
+            mediaID: media.id, fileExtension: "png", start: .zero, end: end
+        ))
+        let second = try XCTUnwrap(VisualOverlay(
+            mediaID: media.id, fileExtension: "gif", start: .zero, end: end
+        ))
+        var project = MelomanProject(name: "Overlay Package", media: [media])
+        project.upsertOverlay(first)
+        project.upsertOverlay(second)
+        let path = directory.appendingPathComponent("Overlays.meloman")
+        var saved = try ProjectStore().save(
+            ProjectBundle(
+                project: project,
+                mediaURLs: [media.id: audio],
+                overlayURLs: [first.id: png, second.id: gif]
+            ),
+            to: path
+        )
+        try FileManager.default.removeItem(at: png)
+        try FileManager.default.removeItem(at: gif)
+        saved = try ProjectStore().save(saved, to: path)
+        let loaded = try ProjectStore().open(at: path)
+        XCTAssertEqual(loaded.project.overlays(for: media.id).count, 2)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(loaded.overlayURLs[first.id])), Data("logo".utf8))
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(loaded.overlayURLs[second.id])), Data("animated".utf8))
+    }
+
     func testProjectMustUseMelomanExtension() {
         let invalid = FileManager.default.temporaryDirectory.appendingPathComponent("not-a-package.zip")
         XCTAssertThrowsError(try ProjectStore().open(at: invalid))

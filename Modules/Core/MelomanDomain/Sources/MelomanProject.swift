@@ -22,6 +22,8 @@ public struct MelomanProject: Codable, Equatable, Identifiable, Sendable {
     public var backgroundImages: [MediaBackgroundImage]?
     /// Separate optional metadata keeps older .meloman projects compatible.
     public var backgroundVideos: [MediaBackgroundVideo]?
+    /// Independent graphics over either an imported video or audio background.
+    public var visualOverlays: [VisualOverlay]?
     public var vocalRemoval: VocalRemovalConfiguration
 
     public init(
@@ -34,6 +36,7 @@ public struct MelomanProject: Codable, Equatable, Identifiable, Sendable {
         karaokeDocuments: [KaraokeDocument]? = nil,
         backgroundImages: [MediaBackgroundImage]? = nil,
         backgroundVideos: [MediaBackgroundVideo]? = nil,
+        visualOverlays: [VisualOverlay]? = nil,
         vocalRemoval: VocalRemovalConfiguration = .init()
     ) {
         self.id = id
@@ -45,6 +48,7 @@ public struct MelomanProject: Codable, Equatable, Identifiable, Sendable {
         self.karaokeDocuments = karaokeDocuments
         self.backgroundImages = backgroundImages
         self.backgroundVideos = backgroundVideos
+        self.visualOverlays = visualOverlays
         self.vocalRemoval = vocalRemoval
     }
 }

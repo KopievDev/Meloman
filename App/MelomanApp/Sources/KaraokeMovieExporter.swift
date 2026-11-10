@@ -30,6 +30,7 @@ struct KaraokeMovieSources {
     let instrumental: URL?
     let backgroundImage: URL?
     let backgroundVideo: URL?
+    let overlays: [KaraokeOverlayAsset]
 }
 
 struct MovieTrackLayout {
@@ -87,7 +88,8 @@ final class KaraokeMovieExporter {
             composition: composition,
             layout: layout,
             duration: mediaDuration,
-            karaoke: karaoke
+            karaoke: karaoke,
+            overlays: sources.overlays
         )
         try await exportComposition(
             composition,
@@ -210,7 +212,8 @@ final class KaraokeMovieExporter {
         composition: AVMutableComposition,
         layout: MovieTrackLayout,
         duration: CMTime,
-        karaoke: KaraokeDocument
+        karaoke: KaraokeDocument,
+        overlays: [KaraokeOverlayAsset]
     ) -> AVMutableVideoComposition {
         let videoComposition = AVMutableVideoComposition()
         videoComposition.renderSize = layout.size
@@ -227,8 +230,8 @@ final class KaraokeMovieExporter {
             on: videoComposition,
             renderSize: layout.size,
             duration: duration.seconds,
-            lyrics: karaoke.lines,
-            style: karaoke.style?.sanitized() ?? .init()
+            karaoke: karaoke,
+            overlays: overlays
         )
         return videoComposition
     }

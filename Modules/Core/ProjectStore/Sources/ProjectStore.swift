@@ -11,6 +11,8 @@ public enum ProjectStoreError: LocalizedError {
     case missingBackground(String)
     case invalidBackgroundVideoExtension(String)
     case missingBackgroundVideo(String)
+    case missingOverlay(String)
+    case invalidOverlay(String)
 
     public var errorDescription: String? {
         switch self {
@@ -32,6 +34,10 @@ public enum ProjectStoreError: LocalizedError {
             "Неподдерживаемое расширение видеофона: \(value)."
         case let .missingBackgroundVideo(name):
             "Не удалось найти видеофон: \(name)."
+        case let .missingOverlay(name):
+            "Не удалось найти файл графического слоя: \(name)."
+        case let .invalidOverlay(name):
+            "Некорректные параметры графического слоя: \(name)."
         }
     }
 }
@@ -41,17 +47,20 @@ public struct ProjectBundle: Sendable {
     public let mediaURLs: [UUID: URL]
     public let backgroundURLs: [UUID: URL]
     public let backgroundVideoURLs: [UUID: URL]
+    public let overlayURLs: [UUID: URL]
 
     public init(
         project: MelomanProject,
         mediaURLs: [UUID: URL],
         backgroundURLs: [UUID: URL] = [:],
-        backgroundVideoURLs: [UUID: URL] = [:]
+        backgroundVideoURLs: [UUID: URL] = [:],
+        overlayURLs: [UUID: URL] = [:]
     ) {
         self.project = project
         self.mediaURLs = mediaURLs
         self.backgroundURLs = backgroundURLs
         self.backgroundVideoURLs = backgroundVideoURLs
+        self.overlayURLs = overlayURLs
     }
 }
 
@@ -80,15 +89,18 @@ public struct ProjectStore: Sendable {
         let mediaDirectory = staging.appendingPathComponent("Media", isDirectory: true)
         let backgroundsDirectory = staging.appendingPathComponent("Backgrounds", isDirectory: true)
         let videosDirectory = staging.appendingPathComponent("BackgroundVideos", isDirectory: true)
+        let overlaysDirectory = staging.appendingPathComponent("Overlays", isDirectory: true)
 
         try manager.createDirectory(at: mediaDirectory, withIntermediateDirectories: true)
         try manager.createDirectory(at: backgroundsDirectory, withIntermediateDirectories: true)
         try manager.createDirectory(at: videosDirectory, withIntermediateDirectories: true)
+        try manager.createDirectory(at: overlaysDirectory, withIntermediateDirectories: true)
         defer { try? manager.removeItem(at: staging) }
 
         let packagedURLs = try stageMedia(bundle, in: mediaDirectory, destination: destination)
         let packagedBackgroundURLs = try stageBackgrounds(bundle, in: backgroundsDirectory, destination: destination)
         let packagedVideoURLs = try stageBackgroundVideos(bundle, in: videosDirectory, destination: destination)
+        let packagedOverlayURLs = try stageVisualOverlays(bundle, in: overlaysDirectory, destination: destination)
 
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -116,7 +128,8 @@ public struct ProjectStore: Sendable {
             project: bundle.project,
             mediaURLs: packagedURLs,
             backgroundURLs: packagedBackgroundURLs,
-            backgroundVideoURLs: packagedVideoURLs
+            backgroundVideoURLs: packagedVideoURLs,
+            overlayURLs: packagedOverlayURLs
         )
     }
 
@@ -160,12 +173,14 @@ public struct ProjectStore: Sendable {
         }
 
         let backgroundVideoURLs = try readBackgroundVideos(manifest.project, in: url)
+        let overlayURLs = try readVisualOverlays(manifest.project, in: url)
 
         return ProjectBundle(
             project: manifest.project,
             mediaURLs: mediaURLs,
             backgroundURLs: backgroundURLs,
-            backgroundVideoURLs: backgroundVideoURLs
+            backgroundVideoURLs: backgroundVideoURLs,
+            overlayURLs: overlayURLs
         )
     }
 

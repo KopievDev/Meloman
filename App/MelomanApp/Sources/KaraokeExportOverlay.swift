@@ -13,8 +13,8 @@ enum KaraokeExportOverlay {
         on videoComposition: AVMutableVideoComposition,
         renderSize: CGSize,
         duration: Double,
-        lyrics: [LyricLine],
-        style: KaraokeStyle
+        karaoke: KaraokeDocument,
+        overlays: [KaraokeOverlayAsset]
     ) {
         let parent = CALayer()
         parent.frame = CGRect(origin: .zero, size: renderSize)
@@ -23,10 +23,18 @@ enum KaraokeExportOverlay {
         let video = CALayer()
         video.frame = parent.bounds
         parent.addSublayer(video)
+        KaraokeVisualOverlayRenderer.install(
+            on: parent, size: renderSize, duration: duration, assets: overlays
+        )
 
         if let timecode = Timecode(microseconds: Int64((duration * 1_000_000).rounded())) {
-            for cue in KaraokeDisplayTimeline.cues(from: lyrics, duration: timecode) {
-                if let layer = makeLine(cue, size: renderSize, duration: duration, style: style) {
+            for cue in KaraokeDisplayTimeline.cues(from: karaoke.lines, duration: timecode) {
+                if let layer = makeLine(
+                    cue,
+                    size: renderSize,
+                    duration: duration,
+                    style: karaoke.style?.sanitized() ?? .init()
+                ) {
                     parent.addSublayer(layer)
                 }
             }

@@ -12,6 +12,8 @@ final class WorkspaceViewController: NSViewController {
     var mediaURLs: [UUID: URL] = [:]
     var backgroundURLs: [UUID: URL] = [:]
     var backgroundVideoURLs: [UUID: URL] = [:]
+    var overlayURLs: [UUID: URL] = [:]
+    var selectedOverlayID: UUID?
     var selectedMediaID: UUID?
     var isBusy = false
 
@@ -61,6 +63,17 @@ final class WorkspaceViewController: NSViewController {
     var activeBackgroundVideoURL: URL?
     var backgroundDurationTask: Task<Void, Never>?
     let lyricStrip = KaraokeTimelineStrip()
+    let visualOverlayStrip = VisualOverlayTimelineStrip()
+    let overlayMenu = NSPopUpButton(frame: .zero, pullsDown: false)
+    let addOverlayButton = NSButton(title: "Добавить PNG/GIF…", target: nil, action: nil)
+    let removeOverlayButton = NSButton(title: "Удалить слой", target: nil, action: nil)
+    let applyOverlayButton = NSButton(title: "Применить слой", target: nil, action: nil)
+    let overlayStartField = NSTextField(string: "")
+    let overlayEndField = NSTextField(string: "")
+    let overlayXField = NSTextField(string: "")
+    let overlayYField = NSTextField(string: "")
+    let overlayWidthField = NSTextField(string: "")
+    let overlayHiddenCheck = NSButton(checkboxWithTitle: "Скрыть слой", target: nil, action: nil)
     let karaokeButton = NSButton(title: "Текст песни", target: nil, action: nil)
     let lyricTextField = NSTextField(string: "")
     let lyricStartField = NSTextField(string: "")

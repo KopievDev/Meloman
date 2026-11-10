@@ -20,7 +20,8 @@ extension WorkspaceViewController {
             project: project,
             mediaURLs: mediaURLs,
             backgroundURLs: backgroundURLs,
-            backgroundVideoURLs: backgroundVideoURLs
+            backgroundVideoURLs: backgroundVideoURLs,
+            overlayURLs: overlayURLs
         )
         isBusy = true
         setBusyControls()
@@ -35,6 +36,7 @@ extension WorkspaceViewController {
                 self?.mediaURLs = saved.mediaURLs
                 self?.backgroundURLs = saved.backgroundURLs
                 self?.backgroundVideoURLs = saved.backgroundVideoURLs
+                self?.overlayURLs = saved.overlayURLs
                 self?.loadSelectedMedia()
                 self?.statusLabel.stringValue = "Сохранено: \(destination.lastPathComponent)"
             } catch {
@@ -73,6 +75,8 @@ extension WorkspaceViewController {
                 mediaURLs = loaded.mediaURLs
                 backgroundURLs = loaded.backgroundURLs
                 backgroundVideoURLs = loaded.backgroundVideoURLs
+                overlayURLs = loaded.overlayURLs
+                selectedOverlayID = nil
                 projectURL = url
                 selectedMediaID = project.media.first?.id
                 refreshMediaList()
