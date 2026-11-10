@@ -27,7 +27,7 @@ extension MediaPreviewView {
             layer.isHidden = true
             visualOverlayRoot.addSublayer(layer)
             visualImageLayers[item.id] = layer
-            visualImageSizes[item.id] = CGSize(width: image.width, height: image.height)
+            visualImageSizes[item.id] = CGSize(width: CGFloat(image.width), height: CGFloat(image.height))
         }
         layoutVisualOverlays()
     }
