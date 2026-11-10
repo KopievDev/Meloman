@@ -24,6 +24,11 @@ enum KaraokeVideoExportError: LocalizedError {
     }
 }
 
+struct KaraokeMovieSources {
+    let instrumental: URL?
+    let backgroundImage: URL?
+}
+
 private struct MovieTrackLayout {
     let size: CGSize
     let transform: CGAffineTransform
@@ -39,8 +44,7 @@ final class KaraokeMovieExporter {
         source: URL,
         media: MediaAsset,
         karaoke: KaraokeDocument,
-        instrumental: URL?,
-        backgroundImage: URL?,
+        sources: KaraokeMovieSources,
         to destination: URL
     ) async throws {
         let seconds = Double(media.duration.microseconds) / 1_000_000
@@ -57,13 +61,13 @@ final class KaraokeMovieExporter {
         if media.kind == .audio {
             onProgress?(
                 "Подготовка видео",
-                backgroundImage == nil ? "Создание чёрного фона" : "Подготовка изображения фона",
+                sources.backgroundImage == nil ? "Создание чёрного фона" : "Подготовка изображения фона",
                 nil
             )
             videoURL = try await KaraokeBackgroundMovie.make(
                 duration: mediaDuration,
                 at: working.appendingPathComponent("background.mov"),
-                imageURL: backgroundImage
+                imageURL: sources.backgroundImage
             )
         } else {
             videoURL = source
@@ -78,7 +82,7 @@ final class KaraokeMovieExporter {
             duration: mediaDuration
         )
         try await insertAudio(
-            from: AVURLAsset(url: instrumental ?? source),
+            from: AVURLAsset(url: sources.instrumental ?? source),
             into: composition,
             duration: mediaDuration
         )
