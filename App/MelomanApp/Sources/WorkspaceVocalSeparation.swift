@@ -67,7 +67,7 @@ extension WorkspaceViewController {
     }
 
     @objc func separationModelChanged(_: Any?) {
-        guard let id = selectedMediaID else { return }
+        guard selectedMediaID != nil else { return }
         stemsByMediaID.removeAll()
         loadSelectedMedia()
         updateStemButtons()

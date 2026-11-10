@@ -13,7 +13,8 @@ enum KaraokeExportOverlay {
         on videoComposition: AVMutableVideoComposition,
         renderSize: CGSize,
         duration: Double,
-        lyrics: [LyricLine]
+        lyrics: [LyricLine],
+        style: KaraokeStyle
     ) {
         let parent = CALayer()
         parent.frame = CGRect(origin: .zero, size: renderSize)
@@ -25,7 +26,7 @@ enum KaraokeExportOverlay {
 
         if let timecode = Timecode(microseconds: Int64((duration * 1_000_000).rounded())) {
             for cue in KaraokeExportTimeline.cues(from: lyrics, duration: timecode) {
-                if let layer = makeLine(cue, size: renderSize, duration: duration) {
+                if let layer = makeLine(cue, size: renderSize, duration: duration, style: style) {
                     parent.addSublayer(layer)
                 }
             }
@@ -39,13 +40,18 @@ enum KaraokeExportOverlay {
     private static func makeLine(
         _ cue: KaraokeExportCue,
         size: CGSize,
-        duration: Double
+        duration: Double,
+        style: KaraokeStyle
     ) -> CALayer? {
         let values = cue.line.words.map { $0.isHidden ? "____" : $0.text }
         let text = values.joined(separator: " ")
-        let fontSize = max(24, min(60, size.width * 0.045))
-        let font = CTFontCreateWithName("HelveticaNeue-Bold" as CFString, fontSize, nil)
-        let measure = attributedText(text, font: font, color: .white)
+        let font = KaraokeStyleRendering.font(for: style, width: size.width)
+        let fontSize = CGFloat(CTFontGetSize(font))
+        let measure = attributedText(
+            text,
+            font: font,
+            color: KaraokeStyleRendering.color(style.textColor)
+        )
         let ctLine = CTLineCreateWithAttributedString(measure)
         let width = CGFloat(CTLineGetTypographicBounds(ctLine, nil, nil, nil))
         guard width > 0 else { return nil }
@@ -56,7 +62,11 @@ enum KaraokeExportOverlay {
         root.bounds = CGRect(x: 0, y: 0, width: width, height: height)
         root.position = CGPoint(
             x: size.width / 2,
-            y: max(30, min(90, size.height * 0.18)) + height * scale / 2
+            y: KaraokeStyleRendering.baseline(
+                for: style,
+                size: size,
+                fontSize: fontSize
+            ) + height * scale / 2
         )
         root.transform = CATransform3DMakeScale(scale, scale, 1)
         root.opacity = 0
@@ -68,9 +78,17 @@ enum KaraokeExportOverlay {
             cue: cue,
             visible: values,
             measured: ctLine,
-            font: font
+            appearance: HighlightAppearance(
+                font: font,
+                color: KaraokeStyleRendering.color(style.highlightColor)
+            )
         )
         return root
+    }
+
+    private struct HighlightAppearance {
+        let font: CTFont
+        let color: NSColor
     }
 
     private static func addWordHighlights(
@@ -78,7 +96,7 @@ enum KaraokeExportOverlay {
         cue: KaraokeExportCue,
         visible: [String],
         measured: CTLine,
-        font: CTFont
+        appearance: HighlightAppearance
     ) {
         let fullText = visible.joined(separator: " ")
         let height = root.bounds.height
@@ -90,8 +108,12 @@ enum KaraokeExportOverlay {
             let end = CTLineGetOffsetForStringIndex(measured, offset, nil)
 
             if !word.isHidden, end > start {
-                let yellow = attributedText(fullText, font: font, color: .systemYellow)
-                let layer = textLayer(yellow, width: root.bounds.width, height: height)
+                let highlight = attributedText(
+                    fullText,
+                    font: appearance.font,
+                    color: appearance.color
+                )
+                let layer = textLayer(highlight, width: root.bounds.width, height: height)
                 let mask = CALayer()
                 mask.backgroundColor = NSColor.white.cgColor
                 mask.anchorPoint = CGPoint(x: 0, y: 0)

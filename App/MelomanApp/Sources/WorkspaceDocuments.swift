@@ -62,6 +62,7 @@ extension WorkspaceViewController {
                 selectedWordID = nil
                 undoHistory.removeAll()
                 redoHistory.removeAll()
+                styleUndoHistory.removeAll()
                 mediaURLs = loaded.mediaURLs
                 projectURL = url
                 selectedMediaID = project.media.first?.id

@@ -29,6 +29,16 @@ final class WorkspaceViewController: NSViewController {
     let recognizeButton = NSButton(title: "AI текст", target: nil, action: nil)
     let exportButton = NSButton(title: "Экспорт MP4", target: nil, action: nil)
     let movieExporter = KaraokeMovieExporter()
+    let styleFontMenu = NSPopUpButton(frame: .zero, pullsDown: false)
+    let styleSizeSlider = NSSlider(value: 56, minValue: 24, maxValue: 112, target: nil, action: nil)
+    let stylePositionSlider = NSSlider(value: 0.18, minValue: 0.12, maxValue: 0.85, target: nil, action: nil)
+    let styleSizeLabel = NSTextField(labelWithString: "56")
+    let stylePositionLabel = NSTextField(labelWithString: "18%")
+    let styleTextColor = NSColorWell()
+    let styleHighlightColor = NSColorWell()
+    let resetStyleButton = NSButton(title: "Сбросить", target: nil, action: nil)
+    let undoStyleButton = NSButton(title: "Отменить стиль", target: nil, action: nil)
+    var styleUndoHistory: [UUID: [KaraokeStyle]] = [:]
     let recognitionLanguage = NSPopUpButton(frame: .zero, pullsDown: false)
     private var didStartModel = false
     let aiProgressPanel = NSView()

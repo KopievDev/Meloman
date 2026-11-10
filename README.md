@@ -4,7 +4,7 @@
 
 See the [MVP roadmap](docs/ROADMAP.md) for product scope and planned milestones.
 
-> **Status:** PR #10 introduces native MP4 karaoke export with animated progressive word highlight. Color/style editing and additional visual layers are future milestones.
+> **Status:** PR #11 introduces per-track karaoke appearance editing (fonts, colors, text size, and vertical placement) shared by preview and MP4 export. Arbitrary background and GIF layers remain future milestones.
 
 ## Requirements
 
@@ -27,12 +27,12 @@ Select the **Meloman** scheme and run the app. Use **Импорт** (or drop med
 
 ## Build a runnable macOS app
 
-From the `feature/009-karaoke-mp4-export` branch, run:
+From the `feature/010-karaoke-style-editor` branch, run:
 
 ```sh
 git fetch origin
-git switch --track origin/feature/009-karaoke-mp4-export
-git pull --ff-only origin feature/009-karaoke-mp4-export
+git switch --track origin/feature/010-karaoke-style-editor
+git pull --ff-only origin feature/010-karaoke-style-editor
 ./scripts/build.sh
 open dist/Meloman.app
 ```
@@ -264,6 +264,31 @@ videos, templates, or style animation. Current karaoke styling matches the
 white/yellow preview convention. GPU rendering speed varies with input
 resolution, duration and effects. Verify actual exported motion, audio,
 orientation, and line timing on your Mac before merging PR #10.
+
+## Karaoke appearance editor (PR #11)
+
+The right-side inspector is now scrollable. Select an imported media item and use
+**ОФОРМЛЕНИЕ КАРАОКЕ** to customize its karaoke captions:
+
+- **Шрифт:** Helvetica Neue Bold, Avenir Next Demi Bold, Georgia Bold, or Menlo Bold.
+- **Размер:** 24–112 points at reference width 1280 px.
+- **Высота:** normalized vertical position (12–85% of video height from bottom).
+- **Обычный / Подсветка:** independent sRGB colors, chosen through macOS color wells.
+- **Отменить стиль** (up to 30 style changes per selected clip) / **Сбросить**.
+
+Changes apply immediately to the preview and are picked up by **Экспорт MP4**
+without modifying the original song or its word timing. Both visual renderers
+resolve the same named font, proportional font size, sRGB colors, and vertical
+position. Appearance is specific to each media item and stored alongside its
+existing karaoke lyrics in `project.json`. Older `.meloman` projects without
+style metadata still load with default white/yellow Helvetica Neue styling;
+there is no schema migration or model download.
+
+Manual verification: switch between two media items with different styles,
+save/reopen, verify that style/lyrics persist, then export an MP4 and compare
+font/color/position with interactive preview. Inspect long text, portrait
+video and word-by-word highlight carefully. The project does not yet support
+per-word styles or animated typography templates.
 
 ## Tests and quality checks
 

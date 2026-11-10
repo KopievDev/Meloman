@@ -38,7 +38,7 @@ final class KaraokeMovieExporter {
     func export(
         source: URL,
         media: MediaAsset,
-        lyrics: [LyricLine],
+        karaoke: KaraokeDocument,
         instrumental: URL?,
         to destination: URL
     ) async throws {
@@ -80,7 +80,7 @@ final class KaraokeMovieExporter {
             composition: composition,
             layout: layout,
             duration: mediaDuration,
-            lyrics: lyrics
+            karaoke: karaoke
         )
         try await exportComposition(
             composition,
@@ -160,7 +160,7 @@ final class KaraokeMovieExporter {
         composition: AVMutableComposition,
         layout: MovieTrackLayout,
         duration: CMTime,
-        lyrics: [LyricLine]
+        karaoke: KaraokeDocument
     ) -> AVMutableVideoComposition {
         let videoComposition = AVMutableVideoComposition()
         videoComposition.renderSize = layout.size
@@ -177,7 +177,8 @@ final class KaraokeMovieExporter {
             on: videoComposition,
             renderSize: layout.size,
             duration: duration.seconds,
-            lyrics: lyrics
+            lyrics: karaoke.lines,
+            style: karaoke.style?.sanitized() ?? .init()
         )
         return videoComposition
     }
