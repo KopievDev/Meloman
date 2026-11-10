@@ -1,7 +1,7 @@
 import Foundation
 import MelomanDomain
 
-public enum KaraokeDisplayRow: Sendable {
+public enum KaraokeDisplayRow: Equatable, Sendable {
     case current
     case upcoming
 }

@@ -379,3 +379,14 @@ always comes from the music file or chosen instrumental stem, never the GIF.
 GIFs with more than 1,200 frames are intentionally rejected in this first
 iteration. Very complex animated GIFs, disposal modes and transparent frames
 should be checked visually on Mac before release.
+
+## Two-line karaoke (PR #16)
+
+The preview and MP4 export display two synchronized lines: the **current** lyric
+is on top with word-by-word highlighting; the **next** line is below in a muted
+color, visible in advance without highlighting. On the next line's start, it
+moves to the top, and the following lyric becomes the bottom row. Both rows
+share the same style, center alignment, and bottom-safe-zone layout. During
+long pauses the previous line stays visible to help singers prepare; the last
+line disappears when its text ends. In the first iteration the two-line view
+is enabled by default rather than being a separate style toggle.

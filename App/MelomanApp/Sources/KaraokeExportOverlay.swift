@@ -25,7 +25,7 @@ enum KaraokeExportOverlay {
         parent.addSublayer(video)
 
         if let timecode = Timecode(microseconds: Int64((duration * 1_000_000).rounded())) {
-            for cue in KaraokeExportTimeline.cues(from: lyrics, duration: timecode) {
+            for cue in KaraokeDisplayTimeline.cues(from: lyrics, duration: timecode) {
                 if let layer = makeLine(cue, size: renderSize, duration: duration, style: style) {
                     parent.addSublayer(layer)
                 }
@@ -38,7 +38,7 @@ enum KaraokeExportOverlay {
     }
 
     private static func makeLine(
-        _ cue: KaraokeExportCue,
+        _ cue: KaraokeDisplayCue,
         size: CGSize,
         duration: Double,
         style: KaraokeStyle
@@ -47,11 +47,9 @@ enum KaraokeExportOverlay {
         let text = values.joined(separator: " ")
         let font = KaraokeStyleRendering.font(for: style, width: size.width)
         let fontSize = CGFloat(CTFontGetSize(font))
-        let measure = attributedText(
-            text,
-            font: font,
-            color: KaraokeStyleRendering.color(style.textColor)
-        )
+        let normalColor = KaraokeStyleRendering.color(style.textColor)
+        let color = cue.row == .current ? normalColor : normalColor.withAlphaComponent(0.68)
+        let measure = attributedText(text, font: font, color: color)
         let ctLine = CTLineCreateWithAttributedString(measure)
         let width = CGFloat(CTLineGetTypographicBounds(ctLine, nil, nil, nil))
         guard width > 0 else { return nil }
@@ -63,7 +61,8 @@ enum KaraokeExportOverlay {
         root.position = CGPoint(
             x: size.width / 2,
             y: KaraokeStyleRendering.baseline(
-                for: style,
+                for: cue.row,
+                style: style,
                 size: size,
                 fontSize: fontSize
             ) + height * scale / 2
@@ -73,16 +72,18 @@ enum KaraokeExportOverlay {
         root.add(visibilityAnimation(for: cue, duration: duration), forKey: "visibility")
         root.addSublayer(textLayer(measure, width: width, height: height))
 
-        addWordHighlights(
-            to: root,
-            cue: cue,
-            visible: values,
-            measured: ctLine,
-            appearance: HighlightAppearance(
-                font: font,
-                color: KaraokeStyleRendering.color(style.highlightColor)
+        if cue.row == .current {
+            addWordHighlights(
+                to: root,
+                cue: cue,
+                visible: values,
+                measured: ctLine,
+                appearance: HighlightAppearance(
+                    font: font,
+                    color: KaraokeStyleRendering.color(style.highlightColor)
+                )
             )
-        )
+        }
         return root
     }
 
@@ -93,7 +94,7 @@ enum KaraokeExportOverlay {
 
     private static func addWordHighlights(
         to root: CALayer,
-        cue: KaraokeExportCue,
+        cue: KaraokeDisplayCue,
         visible: [String],
         measured: CTLine,
         appearance: HighlightAppearance
@@ -171,7 +172,7 @@ enum KaraokeExportOverlay {
     }
 
     private static func visibilityAnimation(
-        for cue: KaraokeExportCue,
+        for cue: KaraokeDisplayCue,
         duration: Double
     ) -> CAKeyframeAnimation {
         let begin = max(0, min(1, Double(cue.start.microseconds) / 1_000_000 / duration))

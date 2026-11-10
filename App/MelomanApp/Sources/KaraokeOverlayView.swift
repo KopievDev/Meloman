@@ -25,16 +25,23 @@ final class KaraokeOverlayView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        guard bounds.width > 40,
-              let frame = KaraokeEngine.frame(at: playhead, lines: lyrics),
-              let context = NSGraphicsContext.current?.cgContext
-        else { return }
+        guard bounds.width > 40, let context = NSGraphicsContext.current?.cgContext else { return }
+        let display = KaraokeDisplayEngine.frame(at: playhead, lines: lyrics)
+        if let current = display.current {
+            drawRow(current, row: .current, in: context)
+        }
+        if let upcoming = display.upcoming {
+            drawRow(upcoming, row: .upcoming, in: context)
+        }
+    }
 
+    private func drawRow(_ frame: KaraokeFrame, row: KaraokeDisplayRow, in context: CGContext) {
         let values = frame.words.map { $0.isHidden ? "____" : $0.text }
         let fullText = values.joined(separator: " ")
         let font = KaraokeStyleRendering.font(for: style, width: bounds.width)
-        let base = createLine(fullText, font: font, color: KaraokeStyleRendering.color(style.textColor))
-        let fill = createLine(fullText, font: font, color: KaraokeStyleRendering.color(style.highlightColor))
+        let color = KaraokeStyleRendering.color(style.textColor)
+        let textColor = row == .current ? color : color.withAlphaComponent(0.68)
+        let base = createLine(fullText, font: font, color: textColor)
 
         var ascent: CGFloat = 0
         var descent: CGFloat = 0
@@ -44,16 +51,32 @@ final class KaraokeOverlayView: NSView {
         let scale = min(1, max(0.01, (bounds.width - 36) / width))
         let originX = max(18, (bounds.width - width * scale) / 2)
         let baselineY = KaraokeStyleRendering.baseline(
-            for: style,
+            for: row,
+            style: style,
             size: bounds.size,
             fontSize: CGFloat(CTFontGetSize(font))
         )
-
         beginDrawing(context, originX: originX, baselineY: baselineY, scale: scale, line: base)
 
+        if row == .current {
+            let fill = createLine(fullText, font: font, color: KaraokeStyleRendering.color(style.highlightColor))
+            drawHighlights(frame.words, values: values, base: base, fill: fill, in: context, ascent: ascent, descent: descent)
+        }
+        context.restoreGState()
+    }
+
+    private func drawHighlights(
+        _ words: [KaraokeWordFrame],
+        values: [String],
+        base: CTLine,
+        fill: CTLine,
+        in context: CGContext,
+        ascent: CGFloat,
+        descent: CGFloat
+    ) {
         var offset = 0
         for (index, value) in values.enumerated() {
-            let word = frame.words[index]
+            let word = words[index]
             let startX = CTLineGetOffsetForStringIndex(base, offset, nil)
             offset += (value as NSString).length
             let endX = CTLineGetOffsetForStringIndex(base, offset, nil)
@@ -76,7 +99,6 @@ final class KaraokeOverlayView: NSView {
                 offset += 1 // UTF-16 space separator
             }
         }
-        context.restoreGState()
     }
 
     private func beginDrawing(

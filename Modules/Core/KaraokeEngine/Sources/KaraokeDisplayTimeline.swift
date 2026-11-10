@@ -34,8 +34,8 @@ public enum KaraokeDisplayTimeline {
             let end = boundaries[index + 1]
             guard start < end else { continue }
             let frame = KaraokeDisplayEngine.frame(at: start, lines: lines)
-            append(frame.current, row: .current, at: start, until: end, from: lines, to: &current)
-            append(frame.upcoming, row: .upcoming, at: start, until: end, from: lines, to: &upcoming)
+            append(frame.current, row: .current, range: start ..< end, from: lines, to: &current)
+            append(frame.upcoming, row: .upcoming, range: start ..< end, from: lines, to: &upcoming)
         }
         return current + upcoming
     }
@@ -43,18 +43,19 @@ public enum KaraokeDisplayTimeline {
     private static func append(
         _ frame: KaraokeFrame?,
         row: KaraokeDisplayRow,
-        at start: Timecode,
-        until end: Timecode,
+        range: Range<Timecode>,
         from lines: [LyricLine],
         to cues: inout [KaraokeDisplayCue]
     ) {
         guard let frame, let line = lines.first(where: { $0.id == frame.lineID }) else { return }
-        if let previous = cues.last, previous.line.id == frame.lineID, previous.end == start {
+        if let previous = cues.last, previous.line.id == frame.lineID, previous.end == range.lowerBound {
             cues[cues.count - 1] = KaraokeDisplayCue(
-                line: line, row: row, start: previous.start, end: end
+                line: line, row: row, start: previous.start, end: range.upperBound
             )
         } else {
-            cues.append(KaraokeDisplayCue(line: line, row: row, start: start, end: end))
+            cues.append(KaraokeDisplayCue(
+                line: line, row: row, start: range.lowerBound, end: range.upperBound
+            ))
         }
     }
 }
