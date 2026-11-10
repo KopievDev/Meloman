@@ -49,15 +49,21 @@ public enum KaraokeEngine {
         }.max { $0.start < $1.start }?.line
 
         guard let line else { return nil }
-        let words = line.words.map { word in
-            KaraokeWordFrame(
-                id: word.id,
-                text: word.text,
-                progress: progress(of: word, at: playhead),
-                isHidden: word.isHidden
-            )
-        }
-        return KaraokeFrame(lineID: line.id, words: words)
+        return frame(for: line, at: playhead)
+    }
+
+    static func frame(for line: LyricLine, at playhead: Timecode) -> KaraokeFrame {
+        KaraokeFrame(
+            lineID: line.id,
+            words: line.words.map { word in
+                KaraokeWordFrame(
+                    id: word.id,
+                    text: word.text,
+                    progress: progress(of: word, at: playhead),
+                    isHidden: word.isHidden
+                )
+            }
+        )
     }
 
     public static func progress(of word: LyricWord, at playhead: Timecode) -> Double {
