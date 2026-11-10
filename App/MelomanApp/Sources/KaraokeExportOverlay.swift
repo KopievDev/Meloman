@@ -27,15 +27,22 @@ enum KaraokeExportOverlay {
             on: parent, size: renderSize, duration: duration, assets: overlays
         )
 
+        let settings = LineRenderSettings(
+            style: karaoke.style?.sanitized() ?? .init(),
+            pronunciation: karaoke.pronunciation?.isEnabled == true ? karaoke.pronunciation : nil
+        )
         if let timecode = Timecode(microseconds: Int64((duration * 1_000_000).rounded())) {
             for cue in KaraokeDisplayTimeline.cues(from: karaoke.lines, duration: timecode) {
-                if let layer = makeLine(
-                    cue,
-                    size: renderSize,
-                    duration: duration,
-                    style: karaoke.style?.sanitized() ?? .init()
-                ) {
+                if let layer = makeLine(cue, size: renderSize, duration: duration, settings: settings) {
                     parent.addSublayer(layer)
+                }
+                if settings.pronunciation != nil {
+                    let phonetic = LineRenderSettings(
+                        style: settings.style, pronunciation: settings.pronunciation, isPhonetic: true
+                    )
+                    if let layer = makeLine(cue, size: renderSize, duration: duration, settings: phonetic) {
+                        parent.addSublayer(layer)
+                    }
                 }
             }
         }
@@ -45,42 +52,55 @@ enum KaraokeExportOverlay {
         )
     }
 
+    private struct LineRenderSettings {
+        let style: KaraokeStyle
+        let pronunciation: KaraokePronunciationTrack?
+        var isPhonetic = false
+    }
+
     private static func makeLine(
         _ cue: KaraokeDisplayCue,
         size: CGSize,
         duration: Double,
-        style: KaraokeStyle
+        settings: LineRenderSettings
     ) -> CALayer? {
-        let values = cue.line.words.map { $0.isHidden ? "____" : $0.text }
+        let style = settings.style
+        let values = cue.line.words.map { word in
+            if word.isHidden { return "____" }
+            return settings.isPhonetic
+                ? (settings.pronunciation?.text(for: word.id) ?? "")
+                : word.text
+        }
+        guard values.contains(where: { !$0.isEmpty }) else { return nil }
         let text = values.joined(separator: " ")
-        let font = KaraokeStyleRendering.font(for: style, width: size.width)
-        let fontSize = CGFloat(CTFontGetSize(font))
+        let mainFont = KaraokeStyleRendering.font(for: style, width: size.width)
+        let font = settings.isPhonetic
+            ? KaraokeStyleRendering.pronunciationFont(for: style, width: size.width)
+            : mainFont
         let normalColor = KaraokeStyleRendering.color(style.textColor)
-        let color = cue.row == .current ? normalColor : normalColor.withAlphaComponent(0.68)
+        let color: NSColor = if settings.isPhonetic {
+            normalColor.withAlphaComponent(cue.row == .current ? 0.85 : 0.52)
+        } else {
+            cue.row == .current ? normalColor : normalColor.withAlphaComponent(0.68)
+        }
         let measure = attributedText(text, font: font, color: color)
         let ctLine = CTLineCreateWithAttributedString(measure)
         let width = CGFloat(CTLineGetTypographicBounds(ctLine, nil, nil, nil))
         guard width > 0 else { return nil }
 
         let scale = min(1, max(0.01, (size.width - 36) / width))
-        let height = fontSize * 1.5
+        let height = CGFloat(CTFontGetSize(font)) * 1.5
+        let baseline = lineBaseline(for: cue, settings: settings, size: size)
         let root = CALayer()
         root.bounds = CGRect(x: 0, y: 0, width: width, height: height)
-        root.position = CGPoint(
-            x: size.width / 2,
-            y: KaraokeStyleRendering.baseline(
-                for: cue.row,
-                style: style,
-                size: size,
-                fontSize: fontSize
-            ) + height * scale / 2
-        )
+        root.position = CGPoint(x: size.width / 2, y: baseline + height * scale / 2)
         root.transform = CATransform3DMakeScale(scale, scale, 1)
         root.opacity = 0
         root.add(visibilityAnimation(for: cue, duration: duration), forKey: "visibility")
         root.addSublayer(textLayer(measure, width: width, height: height))
 
         if cue.row == .current {
+            let highlightColor = KaraokeStyleRendering.color(style.highlightColor)
             addWordHighlights(
                 to: root,
                 cue: cue,
@@ -88,11 +108,28 @@ enum KaraokeExportOverlay {
                 measured: ctLine,
                 appearance: HighlightAppearance(
                     font: font,
-                    color: KaraokeStyleRendering.color(style.highlightColor)
+                    color: settings.isPhonetic ? highlightColor.withAlphaComponent(0.85) : highlightColor
                 )
             )
         }
         return root
+    }
+
+    private static func lineBaseline(
+        for cue: KaraokeDisplayCue,
+        settings: LineRenderSettings,
+        size: CGSize
+    ) -> CGFloat {
+        let fontSize = CGFloat(CTFontGetSize(KaraokeStyleRendering.font(for: settings.style, width: size.width)))
+        if settings.isPhonetic {
+            return KaraokeStyleRendering.pronunciationBaseline(
+                for: cue.row, style: settings.style, size: size, mainFontSize: fontSize
+            )
+        }
+        return KaraokeStyleRendering.baseline(
+            for: cue.row, style: settings.style, size: size,
+            fontSize: fontSize, pronunciationEnabled: settings.pronunciation != nil
+        )
     }
 
     private struct HighlightAppearance {
