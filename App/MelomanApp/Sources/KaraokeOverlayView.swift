@@ -60,24 +60,35 @@ final class KaraokeOverlayView: NSView {
 
         if row == .current {
             let fill = createLine(fullText, font: font, color: KaraokeStyleRendering.color(style.highlightColor))
-            drawHighlights(frame.words, values: values, base: base, fill: fill, in: context, ascent: ascent, descent: descent)
+            drawHighlights(
+                HighlightContent(
+                    words: frame.words,
+                    values: values,
+                    base: base,
+                    fill: fill,
+                    ascent: ascent,
+                    descent: descent
+                ),
+                in: context
+            )
         }
         context.restoreGState()
     }
 
-    private func drawHighlights(
-        _ words: [KaraokeWordFrame],
-        values: [String],
-        base: CTLine,
-        fill: CTLine,
-        in context: CGContext,
-        ascent: CGFloat,
-        descent: CGFloat
-    ) {
+    private struct HighlightContent {
+        let words: [KaraokeWordFrame]
+        let values: [String]
+        let base: CTLine
+        let fill: CTLine
+        let ascent: CGFloat
+        let descent: CGFloat
+    }
+
+    private func drawHighlights(_ highlight: HighlightContent, in context: CGContext) {
         var offset = 0
-        for (index, value) in values.enumerated() {
-            let word = words[index]
-            let startX = CTLineGetOffsetForStringIndex(base, offset, nil)
+        for (index, value) in highlight.values.enumerated() {
+            let word = highlight.words[index]
+            let startX = CTLineGetOffsetForStringIndex(highlight.base, offset, nil)
             offset += (value as NSString).length
             let endX = CTLineGetOffsetForStringIndex(base, offset, nil)
 
@@ -85,17 +96,17 @@ final class KaraokeOverlayView: NSView {
                 context.saveGState()
                 let clip = CGRect(
                     x: startX,
-                    y: -descent - 2,
+                    y: -highlight.descent - 2,
                     width: max(0, endX - startX) * CGFloat(word.progress),
-                    height: ascent + descent + 5
+                    height: highlight.ascent + highlight.descent + 5
                 )
                 context.clip(to: clip)
                 context.textPosition = .zero
-                CTLineDraw(fill, context)
+                CTLineDraw(highlight.fill, context)
                 context.restoreGState()
             }
 
-            if index < values.count - 1 {
+            if index < highlight.values.count - 1 {
                 offset += 1 // UTF-16 space separator
             }
         }
