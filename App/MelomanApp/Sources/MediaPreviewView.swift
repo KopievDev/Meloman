@@ -5,7 +5,14 @@ import AVFoundation
 @MainActor
 final class MediaPreviewView: NSView {
     let playerLayer = AVPlayerLayer()
+    let imageLayer = CALayer()
     let karaokeOverlay = KaraokeOverlayView()
+
+    var backgroundImage: NSImage? {
+        didSet {
+            imageLayer.contents = backgroundImage?.cgImage(forProposedRect: nil, context: nil, hints: nil)
+        }
+    }
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -19,12 +26,16 @@ final class MediaPreviewView: NSView {
 
     override func layout() {
         super.layout()
+        imageLayer.frame = bounds
         playerLayer.frame = bounds
     }
 
     private func configureLayer() {
         wantsLayer = true
         layer?.backgroundColor = NSColor.black.cgColor
+        imageLayer.contentsGravity = .resizeAspectFill
+        imageLayer.masksToBounds = true
+        layer?.addSublayer(imageLayer)
         playerLayer.videoGravity = .resizeAspect
         layer?.addSublayer(playerLayer)
         karaokeOverlay.translatesAutoresizingMaskIntoConstraints = false

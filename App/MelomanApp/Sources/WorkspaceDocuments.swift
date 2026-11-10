@@ -16,7 +16,11 @@ extension WorkspaceViewController {
             destination = url.pathExtension == "meloman" ? url : url.appendingPathExtension("meloman")
         }
 
-        let snapshot = ProjectBundle(project: project, mediaURLs: mediaURLs)
+        let snapshot = ProjectBundle(
+            project: project,
+            mediaURLs: mediaURLs,
+            backgroundURLs: backgroundURLs
+        )
         isBusy = true
         setBusyControls()
         statusLabel.stringValue = "Сохранение проекта…"
@@ -28,6 +32,7 @@ extension WorkspaceViewController {
                 }.value
                 self?.projectURL = destination
                 self?.mediaURLs = saved.mediaURLs
+                self?.backgroundURLs = saved.backgroundURLs
                 self?.loadSelectedMedia()
                 self?.statusLabel.stringValue = "Сохранено: \(destination.lastPathComponent)"
             } catch {
@@ -64,6 +69,7 @@ extension WorkspaceViewController {
                 redoHistory.removeAll()
                 styleUndoHistory.removeAll()
                 mediaURLs = loaded.mediaURLs
+                backgroundURLs = loaded.backgroundURLs
                 projectURL = url
                 selectedMediaID = project.media.first?.id
                 refreshMediaList()
