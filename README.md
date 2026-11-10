@@ -390,3 +390,20 @@ share the same style, center alignment, and bottom-safe-zone layout. During
 long pauses the previous line stays visible to help singers prepare; the last
 line disappears when its text ends. In the first iteration the two-line view
 is enabled by default rather than being a separate style toggle.
+
+## Visual overlay timeline (PR #17)
+
+Use **V3 · ГРАФИКА ПОВЕРХ ВИДЕО** to add several transparent PNG/JPEG/HEIC
+images or animated GIFs on top of the selected media, independently of the
+audio-only background. Each layer has an editable start/end in seconds, X/Y
+center as percent of the canvas (Y measured from the bottom), width as percent,
+and a hide toggle. Click a V3 block to select its layer and seek to its start.
+The current implementation supports numeric timing/position editing in the
+inspector; drag-to-move and resize handles are planned separately.
+
+Graphic layers are rendered above the original footage/background and **below
+the two karaoke lines** in the preview and native MP4 export. Source files are
+non-destructively copied to `Overlays/` in saved portable `.meloman`
+projects, including multiple GIFs. Existing projects with no overlays remain
+compatible. Check animated GIF transparency and MP4 timing visually before
+merging this development PR.
