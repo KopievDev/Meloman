@@ -6,6 +6,7 @@ import AVFoundation
 final class MediaPreviewView: NSView {
     let playerLayer = AVPlayerLayer()
     let imageLayer = CALayer()
+    let backgroundVideoLayer = AVPlayerLayer()
     let karaokeOverlay = KaraokeOverlayView()
 
     var backgroundImage: NSImage? {
@@ -27,6 +28,7 @@ final class MediaPreviewView: NSView {
     override func layout() {
         super.layout()
         imageLayer.frame = bounds
+        backgroundVideoLayer.frame = bounds
         playerLayer.frame = bounds
     }
 
@@ -36,6 +38,9 @@ final class MediaPreviewView: NSView {
         imageLayer.contentsGravity = .resizeAspectFill
         imageLayer.masksToBounds = true
         layer?.addSublayer(imageLayer)
+        backgroundVideoLayer.videoGravity = .resizeAspectFill
+        backgroundVideoLayer.isHidden = true
+        layer?.addSublayer(backgroundVideoLayer)
         playerLayer.videoGravity = .resizeAspect
         layer?.addSublayer(playerLayer)
         karaokeOverlay.translatesAutoresizingMaskIntoConstraints = false

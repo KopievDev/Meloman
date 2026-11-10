@@ -1,4 +1,5 @@
 import AppKit
+import AVFoundation
 import MelomanDomain
 import UniformTypeIdentifiers
 
@@ -12,10 +13,14 @@ extension WorkspaceViewController {
 
         backgroundButton.target = self
         backgroundButton.action = #selector(selectBackgroundImage(_:))
+        videoBackgroundButton.target = self
+        videoBackgroundButton.action = #selector(selectBackgroundVideo(_:))
         clearBackgroundButton.target = self
-        clearBackgroundButton.action = #selector(removeBackgroundImage(_:))
+        clearBackgroundButton.action = #selector(removeBackground(_:))
 
-        let controls = NSStackView(views: [backgroundButton, clearBackgroundButton])
+        let controls = NSStackView(views: [
+            backgroundButton, videoBackgroundButton, clearBackgroundButton,
+        ])
         controls.orientation = .vertical
         controls.alignment = .leading
         controls.spacing = 7
@@ -32,24 +37,28 @@ extension WorkspaceViewController {
         let selected = project.media.first(where: { $0.id == selectedMediaID })
         let isAudio = selected?.kind == .audio
         let imageURL = selectedMediaID.flatMap { backgroundURLs[$0] }
+        let videoURL = selectedMediaID.flatMap { backgroundVideoURLs[$0] }
         backgroundInfo.stringValue = if isAudio {
-            imageURL?.lastPathComponent ?? "Чёрный фон"
+            videoURL?.lastPathComponent ?? imageURL?.lastPathComponent ?? "Чёрный фон"
         } else if selected != nil {
             "Используется исходное видео"
         } else {
             "Выберите аудиофайл"
         }
         backgroundButton.isEnabled = isAudio && !isBusy
-        clearBackgroundButton.isEnabled = isAudio && !isBusy && imageURL != nil
+        videoBackgroundButton.isEnabled = isAudio && !isBusy
+        clearBackgroundButton.isEnabled = isAudio && !isBusy && (imageURL != nil || videoURL != nil)
     }
 
     func refreshBackgroundPreview() {
         let selected = project.media.first(where: { $0.id == selectedMediaID })
         let isAudio = selected?.kind == .audio
         preview.playerLayer.isHidden = isAudio
-        let imageURL = isAudio ? selectedMediaID.flatMap { backgroundURLs[$0] } : nil
+        let videoURL = isAudio ? selectedMediaID.flatMap { backgroundVideoURLs[$0] } : nil
+        let imageURL = isAudio && videoURL == nil ? selectedMediaID.flatMap { backgroundURLs[$0] } : nil
         preview.backgroundImage = imageURL.flatMap { NSImage(contentsOf: $0) }
-        previewHint.stringValue = if isAudio, imageURL == nil {
+        configureBackgroundVideo(videoURL)
+        previewHint.stringValue = if isAudio, imageURL == nil, videoURL == nil {
             selected.map { "♫  \($0.name)" } ?? ""
         } else {
             ""
@@ -78,15 +87,19 @@ extension WorkspaceViewController {
             for: id
         )
         backgroundURLs[id] = url
+        project.setBackgroundVideo(nil, for: id)
+        backgroundVideoURLs.removeValue(forKey: id)
         refreshBackgroundPreview()
         refreshBackgroundControls()
         statusLabel.stringValue = "Фон обновлён. Сохраните проект."
     }
 
-    @objc func removeBackgroundImage(_: Any?) {
+    @objc func removeBackground(_: Any?) {
         guard !isBusy, let id = selectedMediaID else { return }
         project.setBackgroundImage(nil, for: id)
+        project.setBackgroundVideo(nil, for: id)
         backgroundURLs.removeValue(forKey: id)
+        backgroundVideoURLs.removeValue(forKey: id)
         refreshBackgroundPreview()
         refreshBackgroundControls()
         statusLabel.stringValue = "Чёрный фон восстановлен. Сохраните проект."

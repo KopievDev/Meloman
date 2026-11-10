@@ -19,7 +19,8 @@ extension WorkspaceViewController {
         let snapshot = ProjectBundle(
             project: project,
             mediaURLs: mediaURLs,
-            backgroundURLs: backgroundURLs
+            backgroundURLs: backgroundURLs,
+            backgroundVideoURLs: backgroundVideoURLs
         )
         isBusy = true
         setBusyControls()
@@ -33,6 +34,7 @@ extension WorkspaceViewController {
                 self?.projectURL = destination
                 self?.mediaURLs = saved.mediaURLs
                 self?.backgroundURLs = saved.backgroundURLs
+                self?.backgroundVideoURLs = saved.backgroundVideoURLs
                 self?.loadSelectedMedia()
                 self?.statusLabel.stringValue = "Сохранено: \(destination.lastPathComponent)"
             } catch {
@@ -70,6 +72,7 @@ extension WorkspaceViewController {
                 styleUndoHistory.removeAll()
                 mediaURLs = loaded.mediaURLs
                 backgroundURLs = loaded.backgroundURLs
+                backgroundVideoURLs = loaded.backgroundVideoURLs
                 projectURL = url
                 selectedMediaID = project.media.first?.id
                 refreshMediaList()

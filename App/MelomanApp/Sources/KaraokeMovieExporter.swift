@@ -10,6 +10,7 @@ enum KaraokeVideoExportError: LocalizedError {
     case unsupportedMP4
     case invalidVideoSize
     case invalidDuration
+    case invalidBackgroundVideo
 
     var errorDescription: String? {
         switch self {
@@ -20,6 +21,7 @@ enum KaraokeVideoExportError: LocalizedError {
         case .unsupportedMP4: "На этом Mac экспорт в MP4 недоступен."
         case .invalidVideoSize: "У видео некорректное разрешение."
         case .invalidDuration: "У исходного файла некорректная длительность."
+        case .invalidBackgroundVideo: "Видеофон должен содержать видео длительностью не менее 0,5 секунды."
         }
     }
 }
@@ -27,15 +29,16 @@ enum KaraokeVideoExportError: LocalizedError {
 struct KaraokeMovieSources {
     let instrumental: URL?
     let backgroundImage: URL?
+    let backgroundVideo: URL?
 }
 
-private struct MovieTrackLayout {
+struct MovieTrackLayout {
     let size: CGSize
     let transform: CGAffineTransform
 }
 
 /// Native offline rendering. Existing source assets are never overwritten.
-/// Videos preserve source footage and audio; audio-only imports gain an optional still-image background.
+/// Videos preserve source footage; audio-only imports can use an image or a silent looping video background.
 @MainActor
 final class KaraokeMovieExporter {
     var onProgress: ((String, String, Double?) -> Void)?
@@ -57,29 +60,22 @@ final class KaraokeMovieExporter {
         try FileManager.default.createDirectory(at: working, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: working) }
 
-        let videoURL: URL
-        if media.kind == .audio {
-            onProgress?(
-                "Подготовка видео",
-                sources.backgroundImage == nil ? "Создание чёрного фона" : "Подготовка изображения фона",
-                nil
-            )
-            videoURL = try await KaraokeBackgroundMovie.make(
-                duration: mediaDuration,
-                at: working.appendingPathComponent("background.mov"),
-                imageURL: sources.backgroundImage
-            )
-        } else {
-            videoURL = source
-        }
-
+        let loopedVideo = media.kind == .audio && sources.backgroundVideo != nil
+        let videoURL = try await prepareVideoURL(
+            original: source,
+            kind: media.kind,
+            sources: sources,
+            duration: mediaDuration,
+            working: working
+        )
         onProgress?("Подготовка экспорта", "Сборка видео, звука и текста", nil)
         let composition = AVMutableComposition()
         let videoAsset = AVURLAsset(url: videoURL)
-        let layout = try await insertVideo(
+        let layout = try await prepareVideoTrack(
             from: videoAsset,
             into: composition,
-            duration: mediaDuration
+            duration: mediaDuration,
+            looped: loopedVideo
         )
         try await insertAudio(
             from: AVURLAsset(url: sources.instrumental ?? source),
@@ -98,6 +94,42 @@ final class KaraokeMovieExporter {
             duration: mediaDuration,
             to: destination
         )
+    }
+
+    private func prepareVideoURL(
+        original: URL,
+        kind: MediaKind,
+        sources: KaraokeMovieSources,
+        duration: CMTime,
+        working: URL
+    ) async throws -> URL {
+        guard kind == .audio else { return original }
+        if let movie = sources.backgroundVideo {
+            onProgress?("Подготовка видео", "Видеофон повторяется до конца песни", nil)
+            return movie
+        }
+        onProgress?(
+            "Подготовка видео",
+            sources.backgroundImage == nil ? "Создание чёрного фона" : "Подготовка изображения фона",
+            nil
+        )
+        return try await KaraokeBackgroundMovie.make(
+            duration: duration,
+            at: working.appendingPathComponent("background.mov"),
+            imageURL: sources.backgroundImage
+        )
+    }
+
+    private func prepareVideoTrack(
+        from asset: AVURLAsset,
+        into composition: AVMutableComposition,
+        duration: CMTime,
+        looped: Bool
+    ) async throws -> MovieTrackLayout {
+        if looped {
+            return try await insertLoopedBackgroundVideo(from: asset, into: composition, duration: duration)
+        }
+        return try await insertVideo(from: asset, into: composition, duration: duration)
     }
 
     private func insertVideo(

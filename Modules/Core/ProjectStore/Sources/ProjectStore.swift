@@ -9,6 +9,8 @@ public enum ProjectStoreError: LocalizedError {
     case missingMedia(String)
     case invalidBackgroundExtension(String)
     case missingBackground(String)
+    case invalidBackgroundVideoExtension(String)
+    case missingBackgroundVideo(String)
 
     public var errorDescription: String? {
         switch self {
@@ -26,6 +28,10 @@ public enum ProjectStoreError: LocalizedError {
             "Неподдерживаемое расширение фона: \(value)."
         case let .missingBackground(name):
             "Не удалось найти изображение фона: \(name)."
+        case let .invalidBackgroundVideoExtension(value):
+            "Неподдерживаемое расширение видеофона: \(value)."
+        case let .missingBackgroundVideo(name):
+            "Не удалось найти видеофон: \(name)."
         }
     }
 }
@@ -34,15 +40,18 @@ public struct ProjectBundle: Sendable {
     public let project: MelomanProject
     public let mediaURLs: [UUID: URL]
     public let backgroundURLs: [UUID: URL]
+    public let backgroundVideoURLs: [UUID: URL]
 
     public init(
         project: MelomanProject,
         mediaURLs: [UUID: URL],
-        backgroundURLs: [UUID: URL] = [:]
+        backgroundURLs: [UUID: URL] = [:],
+        backgroundVideoURLs: [UUID: URL] = [:]
     ) {
         self.project = project
         self.mediaURLs = mediaURLs
         self.backgroundURLs = backgroundURLs
+        self.backgroundVideoURLs = backgroundVideoURLs
     }
 }
 
@@ -70,13 +79,16 @@ public struct ProjectStore: Sendable {
         let staging = parent.appendingPathComponent(".meloman-\(UUID().uuidString)-staging", isDirectory: true)
         let mediaDirectory = staging.appendingPathComponent("Media", isDirectory: true)
         let backgroundsDirectory = staging.appendingPathComponent("Backgrounds", isDirectory: true)
+        let videosDirectory = staging.appendingPathComponent("BackgroundVideos", isDirectory: true)
 
         try manager.createDirectory(at: mediaDirectory, withIntermediateDirectories: true)
         try manager.createDirectory(at: backgroundsDirectory, withIntermediateDirectories: true)
+        try manager.createDirectory(at: videosDirectory, withIntermediateDirectories: true)
         defer { try? manager.removeItem(at: staging) }
 
         let packagedURLs = try stageMedia(bundle, in: mediaDirectory, destination: destination)
         let packagedBackgroundURLs = try stageBackgrounds(bundle, in: backgroundsDirectory, destination: destination)
+        let packagedVideoURLs = try stageBackgroundVideos(bundle, in: videosDirectory, destination: destination)
 
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -103,7 +115,8 @@ public struct ProjectStore: Sendable {
         return ProjectBundle(
             project: bundle.project,
             mediaURLs: packagedURLs,
-            backgroundURLs: packagedBackgroundURLs
+            backgroundURLs: packagedBackgroundURLs,
+            backgroundVideoURLs: packagedVideoURLs
         )
     }
 
@@ -146,11 +159,31 @@ public struct ProjectStore: Sendable {
             backgroundURLs[background.mediaID] = file
         }
 
+        let backgroundVideoURLs = try readBackgroundVideos(manifest.project, in: url)
+
         return ProjectBundle(
             project: manifest.project,
             mediaURLs: mediaURLs,
-            backgroundURLs: backgroundURLs
+            backgroundURLs: backgroundURLs,
+            backgroundVideoURLs: backgroundVideoURLs
         )
+    }
+
+    private func readBackgroundVideos(_ project: MelomanProject, in url: URL) throws -> [UUID: URL] {
+        var backgroundVideoURLs: [UUID: URL] = [:]
+        for video in project.backgroundVideos ?? [] {
+            guard ["mp4", "mov", "m4v"].contains(video.fileExtension) else {
+                throw ProjectStoreError.invalidBackgroundVideoExtension(video.fileExtension)
+            }
+            let file = url
+                .appendingPathComponent("BackgroundVideos", isDirectory: true)
+                .appendingPathComponent(video.packagedFilename)
+            guard FileManager.default.fileExists(atPath: file.path) else {
+                throw ProjectStoreError.missingBackgroundVideo(video.packagedFilename)
+            }
+            backgroundVideoURLs[video.mediaID] = file
+        }
+        return backgroundVideoURLs
     }
 
     private func stageMedia(
@@ -201,5 +234,30 @@ public struct ProjectStore: Sendable {
                 .appendingPathComponent(background.packagedFilename)
         }
         return packagedBackgroundURLs
+    }
+
+    private func stageBackgroundVideos(
+        _ bundle: ProjectBundle,
+        in directory: URL,
+        destination: URL
+    ) throws -> [UUID: URL] {
+        let manager = FileManager.default
+        var result: [UUID: URL] = [:]
+        for video in bundle.project.backgroundVideos ?? [] {
+            guard ["mp4", "mov", "m4v"].contains(video.fileExtension) else {
+                throw ProjectStoreError.invalidBackgroundVideoExtension(video.fileExtension)
+            }
+            guard let source = bundle.backgroundVideoURLs[video.mediaID],
+                  manager.fileExists(atPath: source.path)
+            else {
+                throw ProjectStoreError.missingBackgroundVideo(video.packagedFilename)
+            }
+
+            try manager.copyItem(at: source, to: directory.appendingPathComponent(video.packagedFilename))
+            result[video.mediaID] = destination
+                .appendingPathComponent("BackgroundVideos", isDirectory: true)
+                .appendingPathComponent(video.packagedFilename)
+        }
+        return result
     }
 }

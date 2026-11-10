@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 struct KaraokeExportSelection {
     let instrumental: Bool
     let backgroundImage: URL?
+    let backgroundVideo: URL?
 }
 
 @MainActor
@@ -49,7 +50,8 @@ extension WorkspaceViewController {
         )
         let selection = KaraokeExportSelection(
             instrumental: instrumentalCheck.state == .on,
-            backgroundImage: asset.kind == .audio ? backgroundURLs[id] : nil
+            backgroundImage: asset.kind == .audio ? backgroundURLs[id] : nil,
+            backgroundVideo: asset.kind == .audio ? backgroundVideoURLs[id] : nil
         )
         Task { [weak self] in
             await self?.performKaraokeExport(
@@ -99,7 +101,8 @@ extension WorkspaceViewController {
                 karaoke: karaoke,
                 sources: KaraokeMovieSources(
                     instrumental: audioURL,
-                    backgroundImage: selection.backgroundImage
+                    backgroundImage: selection.backgroundImage,
+                    backgroundVideo: selection.backgroundVideo
                 ),
                 to: destination
             )

@@ -104,6 +104,54 @@ final class ProjectStoreTests: XCTestCase {
         XCTAssertThrowsError(try ProjectStore().open(at: destination))
     }
 
+    func testVideoBackgroundIsPortableAndSurvivesResave() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let audio = directory.appendingPathComponent("track.wav")
+        let video = directory.appendingPathComponent("visual.mov")
+        let data = Data("sample background video bytes".utf8)
+        try Data("audio".utf8).write(to: audio)
+        try data.write(to: video)
+        let media = MediaAsset(name: "track.wav", fileExtension: "wav", kind: .audio, duration: .zero)
+        var project = MelomanProject(name: "Video Background", media: [media])
+        project.setBackgroundVideo(MediaBackgroundVideo(mediaID: media.id, fileExtension: "mov"), for: media.id)
+        let path = directory.appendingPathComponent("Video.meloman")
+        var saved = try ProjectStore().save(
+            ProjectBundle(project: project, mediaURLs: [media.id: audio], backgroundVideoURLs: [media.id: video]),
+            to: path
+        )
+        try FileManager.default.removeItem(at: video)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(saved.backgroundVideoURLs[media.id])), data)
+
+        saved = try ProjectStore().save(saved, to: path)
+        let reopened = try ProjectStore().open(at: path)
+        XCTAssertEqual(reopened.project.backgroundVideo(for: media.id)?.fileExtension, "mov")
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(reopened.backgroundVideoURLs[media.id])), data)
+    }
+
+    func testMissingVideoBackgroundFailsToOpen() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let audio = directory.appendingPathComponent("song.mp3")
+        let video = directory.appendingPathComponent("background.mp4")
+        try Data("audio".utf8).write(to: audio)
+        try Data("video".utf8).write(to: video)
+        let media = MediaAsset(name: "song.mp3", fileExtension: "mp3", kind: .audio, duration: .zero)
+        var project = MelomanProject(name: "Missing Video", media: [media])
+        project.setBackgroundVideo(MediaBackgroundVideo(mediaID: media.id, fileExtension: "mp4"), for: media.id)
+        let path = directory.appendingPathComponent("MissingVideo.meloman")
+        let saved = try ProjectStore().save(
+            ProjectBundle(project: project, mediaURLs: [media.id: audio], backgroundVideoURLs: [media.id: video]),
+            to: path
+        )
+        try FileManager.default.removeItem(at: XCTUnwrap(saved.backgroundVideoURLs[media.id]))
+        XCTAssertThrowsError(try ProjectStore().open(at: path))
+    }
+
     func testProjectMustUseMelomanExtension() {
         let invalid = FileManager.default.temporaryDirectory.appendingPathComponent("not-a-package.zip")
         XCTAssertThrowsError(try ProjectStore().open(at: invalid))
