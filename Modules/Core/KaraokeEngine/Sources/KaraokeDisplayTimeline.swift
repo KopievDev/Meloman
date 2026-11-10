@@ -65,8 +65,7 @@ public enum KaraokeDisplayTimeline {
         if let previous = cues.last,
            previous.line.id == frame.lineID,
            previous.slot == placement.slot,
-           previous.end == range.lowerBound
-        {
+           previous.end == range.lowerBound {
             cues[cues.count - 1] = KaraokeDisplayCue(
                 line: line, row: placement.role, slot: placement.slot,
                 start: previous.start, end: range.upperBound
