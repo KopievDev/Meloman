@@ -65,7 +65,7 @@ public enum KaraokeDisplayTimeline {
         let sameLine = cues.last?.line.id == frame.lineID
         let sameSlot = cues.last?.slot == placement.slot
         let contiguous = cues.last?.end == range.lowerBound
-        if sameLine && sameSlot && contiguous {
+        if sameLine, sameSlot, contiguous {
             let start = cues[cues.count - 1].start
             cues[cues.count - 1] = KaraokeDisplayCue(
                 line: line, row: placement.role, slot: placement.slot,
