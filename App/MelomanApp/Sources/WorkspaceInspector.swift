@@ -74,23 +74,8 @@ extension WorkspaceViewController {
         tracks.alignment = .leading
         tracks.spacing = 12
 
-        let wordScroll = NSScrollView()
-        wordScroll.hasHorizontalScroller = true
-        wordScroll.drawsBackground = false
-        lyricStrip.frame = NSRect(x: 0, y: 0, width: 660, height: 36)
-        lyricStrip.onSelect = { [weak self] id, time in
-            self?.selectLyricWord(id, seekTo: time)
-        }
-        wordScroll.documentView = lyricStrip
-
-        let overlayScroll = NSScrollView()
-        overlayScroll.hasHorizontalScroller = true
-        overlayScroll.drawsBackground = false
-        visualOverlayStrip.frame = NSRect(x: 0, y: 0, width: 660, height: 32)
-        visualOverlayStrip.onSelect = { [weak self] id, time in
-            self?.selectVisualOverlay(id, seekTo: time)
-        }
-        overlayScroll.documentView = visualOverlayStrip
+        let wordScroll = makeLyricTimelineScroll()
+        let overlayScroll = makeGraphicTimelineScroll()
 
         let progressPanel = makeAIProgressPanel()
         for child in [heading, timelineInfo, tracks, overlayScroll, wordScroll, statusLabel, progressPanel] {
@@ -124,6 +109,30 @@ extension WorkspaceViewController {
         ])
 
         return panel
+    }
+
+    private func makeLyricTimelineScroll() -> NSScrollView {
+        let wordScroll = NSScrollView()
+        wordScroll.hasHorizontalScroller = true
+        wordScroll.drawsBackground = false
+        lyricStrip.frame = NSRect(x: 0, y: 0, width: 660, height: 36)
+        lyricStrip.onSelect = { [weak self] id, time in
+            self?.selectLyricWord(id, seekTo: time)
+        }
+        wordScroll.documentView = lyricStrip
+        return wordScroll
+    }
+
+    private func makeGraphicTimelineScroll() -> NSScrollView {
+        let overlayScroll = NSScrollView()
+        overlayScroll.hasHorizontalScroller = true
+        overlayScroll.drawsBackground = false
+        visualOverlayStrip.frame = NSRect(x: 0, y: 0, width: 660, height: 32)
+        visualOverlayStrip.onSelect = { [weak self] id, time in
+            self?.selectVisualOverlay(id, seekTo: time)
+        }
+        overlayScroll.documentView = visualOverlayStrip
+        return overlayScroll
     }
 
     func makePanel() -> NSView {

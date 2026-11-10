@@ -168,8 +168,8 @@ extension WorkspaceViewController {
               let media = project.media.first(where: { $0.id == old.mediaID }),
               let start = parseOverlayNumber(overlayStartField),
               let end = parseOverlayNumber(overlayEndField),
-              let x = parseOverlayNumber(overlayXField),
-              let y = parseOverlayNumber(overlayYField),
+              let centerX = parseOverlayNumber(overlayXField),
+              let centerY = parseOverlayNumber(overlayYField),
               let width = parseOverlayNumber(overlayWidthField),
               start >= 0, start < end,
               end <= Double(media.duration.microseconds) / 1_000_000,
@@ -183,8 +183,8 @@ extension WorkspaceViewController {
                   fileExtension: old.fileExtension,
                   start: startTime,
                   end: endTime,
-                  centerX: x / 100,
-                  centerY: y / 100,
+                  centerX: centerX / 100,
+                  centerY: centerY / 100,
                   width: width / 100,
                   isHidden: overlayHiddenCheck.state == .on
               )

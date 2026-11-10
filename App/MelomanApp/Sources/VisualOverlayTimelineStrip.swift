@@ -44,9 +44,9 @@ final class VisualOverlayTimelineStrip: NSView {
             NSBezierPath(roundedRect: rect, xRadius: 4, yRadius: 4).fill()
         }
         let cursor = NSBezierPath()
-        let x = position(for: playhead)
-        cursor.move(to: CGPoint(x: x, y: 0))
-        cursor.line(to: CGPoint(x: x, y: bounds.height))
+        let cursorX = position(for: playhead)
+        cursor.move(to: CGPoint(x: cursorX, y: 0))
+        cursor.line(to: CGPoint(x: cursorX, y: bounds.height))
         NSColor.systemRed.setStroke()
         cursor.lineWidth = 2
         cursor.stroke()
@@ -66,7 +66,7 @@ final class VisualOverlayTimelineStrip: NSView {
     }
 
     private func frame(for overlay: VisualOverlay) -> CGRect {
-        let x = position(for: overlay.start)
-        return CGRect(x: x, y: 3, width: max(2, position(for: overlay.end) - x), height: bounds.height - 6)
+        let startX = position(for: overlay.start)
+        return CGRect(x: startX, y: 3, width: max(2, position(for: overlay.end) - startX), height: bounds.height - 6)
     }
 }
