@@ -15,6 +15,10 @@ final class KaraokeOverlayView: NSView {
         didSet { needsDisplay = true }
     }
 
+    var pronunciation = KaraokePronunciationTrack() {
+        didSet { needsDisplay = true }
+    }
+
     var playhead: Timecode = .zero {
         didSet { needsDisplay = true }
     }
@@ -27,20 +31,44 @@ final class KaraokeOverlayView: NSView {
         super.draw(dirtyRect)
         guard bounds.width > 40, let context = NSGraphicsContext.current?.cgContext else { return }
         let display = KaraokeDisplayEngine.frame(at: playhead, lines: lyrics)
+        let track = pronunciation.isEnabled ? pronunciation : nil
         if let current = display.current {
-            drawRow(current, row: .current, in: context)
+            drawRow(current, row: .current, in: context, track: track)
+            if track != nil {
+                drawRow(current, row: .current, in: context, track: track, phonetic: true)
+            }
         }
         if let upcoming = display.upcoming {
-            drawRow(upcoming, row: .upcoming, in: context)
+            drawRow(upcoming, row: .upcoming, in: context, track: track)
+            if track != nil {
+                drawRow(upcoming, row: .upcoming, in: context, track: track, phonetic: true)
+            }
         }
     }
 
-    private func drawRow(_ frame: KaraokeFrame, row: KaraokeDisplayRow, in context: CGContext) {
-        let values = frame.words.map { $0.isHidden ? "____" : $0.text }
+    private func drawRow(
+        _ frame: KaraokeFrame,
+        row: KaraokeDisplayRow,
+        in context: CGContext,
+        track: KaraokePronunciationTrack?,
+        phonetic: Bool = false
+    ) {
+        let values = frame.words.map { word in
+            if word.isHidden { return "____" }
+            return phonetic ? (track?.text(for: word.id) ?? "") : word.text
+        }
+        guard values.contains(where: { !$0.isEmpty }) else { return }
         let fullText = values.joined(separator: " ")
-        let font = KaraokeStyleRendering.font(for: style, width: bounds.width)
-        let color = KaraokeStyleRendering.color(style.textColor)
-        let textColor = row == .current ? color : color.withAlphaComponent(0.68)
+        let mainFont = KaraokeStyleRendering.font(for: style, width: bounds.width)
+        let font = phonetic
+            ? KaraokeStyleRendering.pronunciationFont(for: style, width: bounds.width)
+            : mainFont
+        let normalColor = KaraokeStyleRendering.color(style.textColor)
+        let textColor = if phonetic {
+            normalColor.withAlphaComponent(row == .current ? 0.85 : 0.52)
+        } else {
+            row == .current ? normalColor : normalColor.withAlphaComponent(0.68)
+        }
         let base = createLine(fullText, font: font, color: textColor)
 
         var ascent: CGFloat = 0
@@ -50,16 +78,22 @@ final class KaraokeOverlayView: NSView {
 
         let scale = min(1, max(0.01, (bounds.width - 36) / width))
         let originX = max(18, (bounds.width - width * scale) / 2)
-        let baselineY = KaraokeStyleRendering.baseline(
-            for: row,
-            style: style,
-            size: bounds.size,
-            fontSize: CGFloat(CTFontGetSize(font))
-        )
+        let fontSize = CGFloat(CTFontGetSize(mainFont))
+        let baselineY = if phonetic {
+            KaraokeStyleRendering.pronunciationBaseline(
+                for: row, style: style, size: bounds.size, mainFontSize: fontSize
+            )
+        } else {
+            KaraokeStyleRendering.baseline(
+                for: row, style: style, size: bounds.size, fontSize: fontSize,
+                pronunciationEnabled: track != nil
+            )
+        }
         beginDrawing(context, originX: originX, baselineY: baselineY, scale: scale, line: base)
 
         if row == .current {
-            let fill = createLine(fullText, font: font, color: KaraokeStyleRendering.color(style.highlightColor))
+            let color = KaraokeStyleRendering.color(style.highlightColor)
+            let fill = createLine(fullText, font: font, color: phonetic ? color.withAlphaComponent(0.85) : color)
             drawHighlights(
                 HighlightContent(
                     words: frame.words,

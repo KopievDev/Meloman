@@ -12,6 +12,12 @@ enum KaraokeStyleRendering {
         return CTFontCreateWithName(safe.font.postScriptName as CFString, points, nil)
     }
 
+    static func pronunciationFont(for style: KaraokeStyle, width: CGFloat) -> CTFont {
+        let base = font(for: style, width: width)
+        let points = max(9, CGFloat(CTFontGetSize(base)) * 0.55)
+        return CTFontCreateWithName(style.sanitized().font.postScriptName as CFString, points, nil)
+    }
+
     static func color(_ value: KaraokeRGB) -> NSColor {
         NSColor(
             calibratedRed: CGFloat(value.red) / 255,
@@ -39,14 +45,31 @@ enum KaraokeStyleRendering {
         for row: KaraokeDisplayRow,
         style: KaraokeStyle,
         size: CGSize,
-        fontSize: CGFloat
+        fontSize: CGFloat,
+        pronunciationEnabled: Bool = false
     ) -> CGFloat {
-        let spacing = fontSize * 1.45
-        let bottomInset = max(10, fontSize * 0.95)
-        let upperLimit = max(bottomInset + spacing, size.height - fontSize * 1.2)
+        let spacing = fontSize * (pronunciationEnabled ? 2.1 : 1.45)
+        let bottomInset = max(10, fontSize * (pronunciationEnabled ? 1.36 : 0.95))
+        let extra = pronunciationEnabled ? fontSize * 0.68 : 0
+        let upperLimit = max(bottomInset + spacing + extra, size.height - fontSize * 1.2)
         let preferred = baseline(for: style, size: size, fontSize: fontSize)
-        let upper = min(upperLimit, max(bottomInset + spacing, preferred))
+        let upper = min(upperLimit, max(bottomInset + spacing + extra, preferred))
         return row == .current ? upper : upper - spacing
+    }
+
+    static func pronunciationBaseline(
+        for row: KaraokeDisplayRow,
+        style: KaraokeStyle,
+        size: CGSize,
+        mainFontSize: CGFloat
+    ) -> CGFloat {
+        baseline(
+            for: row,
+            style: style,
+            size: size,
+            fontSize: mainFontSize,
+            pronunciationEnabled: true
+        ) - mainFontSize * 0.68
     }
 
     static func baseline(for style: KaraokeStyle, size: CGSize, fontSize: CGFloat) -> CGFloat {
