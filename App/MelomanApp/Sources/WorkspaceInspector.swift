@@ -24,7 +24,10 @@ extension WorkspaceViewController {
         column.orientation = .vertical
         column.alignment = .leading
         column.spacing = 15
-        for view in [inspectorInfo, lyricsControls, styleControls, backgroundControls, recognitionLanguage, separation] {
+        for view in [
+            inspectorInfo, lyricsControls, styleControls,
+            backgroundControls, recognitionLanguage, separation,
+        ] {
             view.translatesAutoresizingMaskIntoConstraints = false
             view.widthAnchor.constraint(equalTo: column.widthAnchor).isActive = true
         }
