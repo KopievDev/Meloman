@@ -29,11 +29,26 @@ public struct KaraokeFrame: Equatable, Sendable {
 /// This is shared semantic timing for preview and future offline export.
 public enum KaraokeEngine {
     public static func frame(at playhead: Timecode, lines: [LyricLine]) -> KaraokeFrame? {
-        guard let line = lines.first(where: { line in
-            guard let first = line.words.first, let last = line.words.last else { return false }
-            return playhead >= first.start && playhead < last.end
-        }) else { return nil }
+        // CTC aligns words independently. Their times may not match the textual
+        // order, so first.start / last.end can accidentally hide a whole line.
+        let active = lines.compactMap { line -> (line: LyricLine, start: Timecode)? in
+            let latest = line.words
+                .filter { playhead >= $0.start && playhead < $0.end }
+                .map(\.start)
+                .max()
+            guard let latest else { return nil }
+            return (line, latest)
+        }.max { $0.start < $1.start }?.line
 
+        let line = active ?? lines.compactMap { line -> (line: LyricLine, start: Timecode)? in
+            guard let first = line.words.map(\.start).min(),
+                  let last = line.words.map(\.end).max(),
+                  playhead >= first, playhead < last
+            else { return nil }
+            return (line, first)
+        }.max { $0.start < $1.start }?.line
+
+        guard let line else { return nil }
         let words = line.words.map { word in
             KaraokeWordFrame(
                 id: word.id,
