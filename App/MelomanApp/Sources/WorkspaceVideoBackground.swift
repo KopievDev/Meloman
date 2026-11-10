@@ -30,7 +30,7 @@ extension WorkspaceViewController {
                     self?.showError("Видеофон должен содержать видео длительностью от 0,5 секунды.")
                     return
                 }
-                guard let self, self.selectedMediaID == id else { return }
+                guard let self, selectedMediaID == id else { return }
                 project.setBackgroundVideo(
                     MediaBackgroundVideo(mediaID: id, fileExtension: url.pathExtension),
                     for: id
@@ -62,8 +62,12 @@ extension WorkspaceViewController {
         backgroundDurationTask = Task { @MainActor [weak self] in
             do {
                 let duration = try await asset.load(.duration).seconds
-                guard let self, self.activeBackgroundVideoURL == url, !Task.isCancelled else { return }
-                guard duration.isFinite, duration >= 0.5 else { return }
+                guard let self,
+                      activeBackgroundVideoURL == url,
+                      !Task.isCancelled,
+                      duration.isFinite,
+                      duration >= 0.5
+                else { return }
                 backgroundVideoDuration = duration
                 let now = player.currentTime().seconds
                 syncBackgroundVideo(to: now.isFinite ? now : 0, forceSeek: true)
