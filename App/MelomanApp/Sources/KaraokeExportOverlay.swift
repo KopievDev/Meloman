@@ -29,7 +29,12 @@ enum KaraokeExportOverlay {
 
         if let timecode = Timecode(microseconds: Int64((duration * 1_000_000).rounded())) {
             for cue in KaraokeDisplayTimeline.cues(from: karaoke.lines, duration: timecode) {
-                if let layer = makeLine(cue, size: renderSize, duration: duration, style: karaoke.style?.sanitized() ?? .init()) {
+                if let layer = makeLine(
+                    cue,
+                    size: renderSize,
+                    duration: duration,
+                    style: karaoke.style?.sanitized() ?? .init()
+                ) {
                     parent.addSublayer(layer)
                 }
             }
