@@ -159,8 +159,19 @@ public struct ProjectStore: Sendable {
             backgroundURLs[background.mediaID] = file
         }
 
+        let backgroundVideoURLs = try readBackgroundVideos(manifest.project, in: url)
+
+        return ProjectBundle(
+            project: manifest.project,
+            mediaURLs: mediaURLs,
+            backgroundURLs: backgroundURLs,
+            backgroundVideoURLs: backgroundVideoURLs
+        )
+    }
+
+    private func readBackgroundVideos(_ project: MelomanProject, in url: URL) throws -> [UUID: URL] {
         var backgroundVideoURLs: [UUID: URL] = [:]
-        for video in manifest.project.backgroundVideos ?? [] {
+        for video in project.backgroundVideos ?? [] {
             guard ["mp4", "mov", "m4v"].contains(video.fileExtension) else {
                 throw ProjectStoreError.invalidBackgroundVideoExtension(video.fileExtension)
             }
@@ -172,13 +183,7 @@ public struct ProjectStore: Sendable {
             }
             backgroundVideoURLs[video.mediaID] = file
         }
-
-        return ProjectBundle(
-            project: manifest.project,
-            mediaURLs: mediaURLs,
-            backgroundURLs: backgroundURLs,
-            backgroundVideoURLs: backgroundVideoURLs
-        )
+        return backgroundVideoURLs
     }
 
     private func stageMedia(
