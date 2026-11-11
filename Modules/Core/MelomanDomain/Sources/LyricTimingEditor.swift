@@ -25,36 +25,12 @@ public enum LyricTimingEditor {
               let lineIndex = lines.firstIndex(where: { $0.words.contains(where: { $0.id == wordID }) }),
               let wordIndex = lines[lineIndex].words.firstIndex(where: { $0.id == wordID })
         else { return nil }
-
         let words = lines[lineIndex].words
-        guard words.allSatisfy({ $0.start < $0.end && $0.end <= mediaDuration }) else { return nil }
-        let selected = words[wordIndex]
-        let start = selected.start.microseconds
-        let end = selected.end.microseconds
+        guard words.allSatisfy({ $0.start < $0.end && $0.end <= mediaDuration }),
+              let allowed = deltaRange(mode, word: words[wordIndex], in: words, duration: mediaDuration)
+        else { return nil }
 
-        let minimumDelta: Int64
-        let maximumDelta: Int64
-        switch mode {
-        case .moveWord:
-            minimumDelta = -start
-            maximumDelta = mediaDuration.microseconds - end
-        case .trimStart:
-            minimumDelta = -start
-            let minimum = min(minimumWordMicroseconds, end - start)
-            maximumDelta = end - minimum - start
-        case .trimEnd:
-            let minimum = min(minimumWordMicroseconds, end - start)
-            minimumDelta = start + minimum - end
-            maximumDelta = mediaDuration.microseconds - end
-        case .moveLine:
-            guard let first = words.map(\.start.microseconds).min(),
-                  let last = words.map(\.end.microseconds).max()
-            else { return nil }
-            minimumDelta = -first
-            maximumDelta = mediaDuration.microseconds - last
-        }
-
-        let offset = max(minimumDelta, min(maximumDelta, deltaMicroseconds))
+        let offset = max(allowed.lowerBound, min(allowed.upperBound, deltaMicroseconds))
         guard offset != 0 else { return lines }
 
         var changed = lines
@@ -68,19 +44,51 @@ public enum LyricTimingEditor {
                 )!
             }
         } else {
-            switch mode {
-            case .moveWord:
-                changed[lineIndex].words[wordIndex].start = Timecode(microseconds: start + offset)!
-                changed[lineIndex].words[wordIndex].end = Timecode(microseconds: end + offset)!
-            case .trimStart:
-                changed[lineIndex].words[wordIndex].start = Timecode(microseconds: start + offset)!
-            case .trimEnd:
-                changed[lineIndex].words[wordIndex].end = Timecode(microseconds: end + offset)!
-            case .moveLine:
-                break
-            }
+            changeWord(&changed[lineIndex].words[wordIndex], mode: mode, delta: offset)
         }
         return changed
+    }
+
+    private static func deltaRange(
+        _ mode: LyricTimingEditMode,
+        word: LyricWord,
+        in words: [LyricWord],
+        duration: Timecode
+    ) -> ClosedRange<Int64>? {
+        let start = word.start.microseconds
+        let end = word.end.microseconds
+        let minimum = min(minimumWordMicroseconds, end - start)
+        switch mode {
+        case .moveWord:
+            return -start ... (duration.microseconds - end)
+        case .trimStart:
+            return -start ... (end - minimum - start)
+        case .trimEnd:
+            return (start + minimum - end) ... (duration.microseconds - end)
+        case .moveLine:
+            guard let first = words.map(\.start.microseconds).min(),
+                  let last = words.map(\.end.microseconds).max()
+            else { return nil }
+            return -first ... (duration.microseconds - last)
+        }
+    }
+
+    private static func changeWord(
+        _ word: inout LyricWord,
+        mode: LyricTimingEditMode,
+        delta: Int64
+    ) {
+        switch mode {
+        case .moveWord:
+            word.start = Timecode(microseconds: word.start.microseconds + delta)!
+            word.end = Timecode(microseconds: word.end.microseconds + delta)!
+        case .trimStart:
+            word.start = Timecode(microseconds: word.start.microseconds + delta)!
+        case .trimEnd:
+            word.end = Timecode(microseconds: word.end.microseconds + delta)!
+        case .moveLine:
+            break
+        }
     }
 
     /// Snap the dragged boundary (not merely the delta) to the nearest grid

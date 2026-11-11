@@ -55,52 +55,9 @@ final class KaraokeTimelineStrip: NSView {
         super.draw(dirtyRect)
         NSColor.windowBackgroundColor.setFill()
         NSBezierPath(rect: bounds).fill()
-
         for word in lines.flatMap(\.words) {
-            let rect = rectForWord(word)
-            guard rect.intersects(dirtyRect), rect.width > 0 else { continue }
-            let selected = word.id == selectedWordID
-            let fill: NSColor = if selected {
-                .systemYellow
-            } else if let confidence = word.alignmentConfidence, confidence < 0.25 {
-                NSColor.systemOrange.withAlphaComponent(0.75)
-            } else if pronunciation != nil {
-                NSColor.systemIndigo.withAlphaComponent(pronunciation?.isEnabled == true ? 0.75 : 0.25)
-            } else {
-                NSColor.systemTeal.withAlphaComponent(0.65)
-            }
-            fill.setFill()
-            NSBezierPath(roundedRect: rect, xRadius: 4, yRadius: 4).fill()
-            if selected, isTimingEditEnabled, rect.width >= 20 {
-                NSColor.white.withAlphaComponent(0.8).setFill()
-                NSBezierPath(rect: NSRect(
-                    x: rect.minX + 3, y: rect.minY + 5, width: 2, height: rect.height - 10
-                )).fill()
-                NSBezierPath(rect: NSRect(
-                    x: rect.maxX - 5, y: rect.minY + 5, width: 2, height: rect.height - 10
-                )).fill()
-            }
-
-            if rect.width > 24 {
-                let paragraph = NSMutableParagraphStyle()
-                paragraph.lineBreakMode = .byTruncatingTail
-                let title = if word.isHidden {
-                    "____"
-                } else {
-                    pronunciation?.text(for: word.id) ?? (pronunciation == nil ? word.text : "")
-                }
-                let attributes: [NSAttributedString.Key: Any] = [
-                    .font: NSFont.systemFont(ofSize: 11, weight: .medium),
-                    .foregroundColor: NSColor.black,
-                    .paragraphStyle: paragraph,
-                ]
-                (title as NSString).draw(
-                    in: rect.insetBy(dx: 4, dy: 6),
-                    withAttributes: attributes
-                )
-            }
+            drawWord(word, in: dirtyRect)
         }
-
         let cursorX = xPosition(playhead)
         NSColor.systemRed.setStroke()
         let cursor = NSBezierPath()
@@ -108,6 +65,62 @@ final class KaraokeTimelineStrip: NSView {
         cursor.line(to: NSPoint(x: cursorX, y: bounds.height))
         cursor.lineWidth = 2
         cursor.stroke()
+    }
+
+    private func drawWord(_ word: LyricWord, in dirtyRect: NSRect) {
+        let rect = rectForWord(word)
+        guard rect.intersects(dirtyRect), rect.width > 0 else { return }
+        let selected = word.id == selectedWordID
+        wordColor(word, selected: selected).setFill()
+        NSBezierPath(roundedRect: rect, xRadius: 4, yRadius: 4).fill()
+        if selected, isTimingEditEnabled, rect.width >= 20 {
+            drawWordHandles(in: rect)
+        }
+        if rect.width > 24 {
+            drawWordTitle(word, in: rect)
+        }
+    }
+
+    private func wordColor(_ word: LyricWord, selected: Bool) -> NSColor {
+        if selected {
+            return .systemYellow
+        }
+        if let confidence = word.alignmentConfidence, confidence < 0.25 {
+            return NSColor.systemOrange.withAlphaComponent(0.75)
+        }
+        if pronunciation != nil {
+            return NSColor.systemIndigo.withAlphaComponent(pronunciation?.isEnabled == true ? 0.75 : 0.25)
+        }
+        return NSColor.systemTeal.withAlphaComponent(0.65)
+    }
+
+    private func drawWordHandles(in rect: NSRect) {
+        NSColor.white.withAlphaComponent(0.8).setFill()
+        NSBezierPath(rect: NSRect(
+            x: rect.minX + 3, y: rect.minY + 5, width: 2, height: rect.height - 10
+        )).fill()
+        NSBezierPath(rect: NSRect(
+            x: rect.maxX - 5, y: rect.minY + 5, width: 2, height: rect.height - 10
+        )).fill()
+    }
+
+    private func drawWordTitle(_ word: LyricWord, in rect: NSRect) {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byTruncatingTail
+        let title = if word.isHidden {
+            "____"
+        } else {
+            pronunciation?.text(for: word.id) ?? (pronunciation == nil ? word.text : "")
+        }
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 11, weight: .medium),
+            .foregroundColor: NSColor.black,
+            .paragraphStyle: paragraph,
+        ]
+        (title as NSString).draw(
+            in: rect.insetBy(dx: 4, dy: 6),
+            withAttributes: attributes
+        )
     }
 
     override func mouseDown(with event: NSEvent) {
