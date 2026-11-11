@@ -197,7 +197,7 @@ final class MelomanDomainTests: XCTestCase {
             .trimStart, to: word.id, in: lines,
             deltaMicroseconds: 3_000_000, mediaDuration: duration
         ))
-        XCTAssertEqual(trimmedStart[0].words[0].start.microseconds, 750000)
+        XCTAssertEqual(trimmedStart[0].words[0].start.microseconds, 750_000)
         XCTAssertEqual(trimmedStart[0].words[0].end.microseconds, 800_000)
 
         let trimmedEnd = try XCTUnwrap(LyricTimingEditor.applying(
@@ -205,7 +205,7 @@ final class MelomanDomainTests: XCTestCase {
             deltaMicroseconds: -3_000_000, mediaDuration: duration
         ))
         XCTAssertEqual(trimmedEnd[0].words[0].start.microseconds, 300_000)
-        XCTAssertEqual(trimmedEnd[0].words[0].end.microseconds, 350000)
+        XCTAssertEqual(trimmedEnd[0].words[0].end.microseconds, 350_000)
 
         let bounded = try XCTUnwrap(LyricTimingEditor.applying(
             .moveWord, to: word.id, in: lines,
@@ -218,7 +218,7 @@ final class MelomanDomainTests: XCTestCase {
         let duration = try XCTUnwrap(Timecode(microseconds: 2_000_000))
         let first = try XCTUnwrap(LyricWord(
             text: "Сорвал", start: XCTUnwrap(Timecode(microseconds: 200_000)),
-            end: XCTUnwrap(Timecode(microseconds: 450000))
+            end: XCTUnwrap(Timecode(microseconds: 450_000))
         ))
         let second = try XCTUnwrap(LyricWord(
             text: "ветер", start: XCTUnwrap(Timecode(microseconds: 700_000)),
@@ -250,7 +250,7 @@ final class MelomanDomainTests: XCTestCase {
 
     func testProjectJSONRoundTripPreservesLyricsAndTracks() throws {
         let start = try XCTUnwrap(Timecode(microseconds: 100_000))
-        let end = try XCTUnwrap(Timecode(microseconds: 750000))
+        let end = try XCTUnwrap(Timecode(microseconds: 750_000))
         let word = try XCTUnwrap(LyricWord(text: "Привет", start: start, end: end))
         let line = LyricLine(words: [word])
         let track = TimelineTrack(kind: .karaoke)
