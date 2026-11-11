@@ -444,3 +444,8 @@ hints remain unchanged. The original manual timing inspector is still
 available. This first version edits single words or entire lyric lines; ripple
 editing, split, multi-selection and audio waveform snapping are separate
 follow-up enhancements.
+
+The timeline also has a **45–260 px/s zoom slider**, initially at 120 px/s,
+so even short rap syllables have usable drag handles. K1, K2 and V3 share the
+same scale and synchronize horizontal scroll positions. Zoom recenters the
+timeline near the current playback position.

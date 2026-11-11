@@ -71,10 +71,11 @@ extension WorkspaceViewController {
         let overlayScroll = makeGraphicTimelineScroll()
         let pronunciationScroll = makePronunciationTimelineScroll()
 
+        configureTimelineZoom([overlayScroll, wordScroll, pronunciationScroll])
         let progressPanel = makeAIProgressPanel()
         let timelineViews = [
             heading, timelineInfo, tracks, overlayScroll, wordScroll, pronunciationScroll,
-            statusLabel, progressPanel,
+            timelineZoomSlider, timelineZoomLabel, statusLabel, progressPanel,
         ]
         for child in timelineViews {
             child.translatesAutoresizingMaskIntoConstraints = false
@@ -87,6 +88,11 @@ extension WorkspaceViewController {
             heading.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 18),
             timelineInfo.centerYAnchor.constraint(equalTo: heading.centerYAnchor),
             timelineInfo.leadingAnchor.constraint(equalTo: heading.trailingAnchor, constant: 18),
+            timelineZoomSlider.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -18),
+            timelineZoomSlider.centerYAnchor.constraint(equalTo: heading.centerYAnchor),
+            timelineZoomSlider.widthAnchor.constraint(equalToConstant: 150),
+            timelineZoomLabel.trailingAnchor.constraint(equalTo: timelineZoomSlider.leadingAnchor, constant: -10),
+            timelineZoomLabel.centerYAnchor.constraint(equalTo: heading.centerYAnchor),
             tracks.topAnchor.constraint(equalTo: heading.bottomAnchor, constant: 25),
             tracks.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 18),
             overlayScroll.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 137),

@@ -13,8 +13,7 @@ extension WorkspaceViewController {
         refreshStyleControls()
         lyricStrip.lines = lyrics
         lyricStrip.duration = project.media.first(where: { $0.id == mediaID })?.duration ?? .zero
-        let seconds = Double(lyricStrip.duration.microseconds) / 1_000_000
-        lyricStrip.setFrameSize(NSSize(width: max(660, seconds * 45), height: 36))
+        lyricStrip.setFrameSize(NSSize(width: timelineWidth(for: lyricStrip.duration), height: 36))
 
         let words = lyrics.flatMap(\.words)
         if !words.contains(where: { $0.id == selectedWordID }) {
@@ -25,7 +24,9 @@ extension WorkspaceViewController {
         pronunciationStrip.lines = lyrics
         pronunciationStrip.duration = lyricStrip.duration
         pronunciationStrip.pronunciation = mediaID.map { project.karaokePronunciation(for: $0) }
-        pronunciationStrip.setFrameSize(NSSize(width: max(660, seconds * 45), height: 32))
+        pronunciationStrip.setFrameSize(NSSize(
+            width: timelineWidth(for: pronunciationStrip.duration), height: 32
+        ))
         pronunciationStrip.selectedWordID = selectedWordID
         pronunciationStrip.isTimingEditEnabled = mediaID != nil && !isBusy
         displaySelectedLyricWord()
