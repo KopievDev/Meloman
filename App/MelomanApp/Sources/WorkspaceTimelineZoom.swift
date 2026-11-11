@@ -22,6 +22,16 @@ extension WorkspaceViewController {
         }
     }
 
+    func layoutTimelineZoom(in panel: NSView, beside heading: NSView) {
+        NSLayoutConstraint.activate([
+            timelineZoomSlider.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -18),
+            timelineZoomSlider.centerYAnchor.constraint(equalTo: heading.centerYAnchor),
+            timelineZoomSlider.widthAnchor.constraint(equalToConstant: 150),
+            timelineZoomLabel.trailingAnchor.constraint(equalTo: timelineZoomSlider.leadingAnchor, constant: -10),
+            timelineZoomLabel.centerYAnchor.constraint(equalTo: heading.centerYAnchor),
+        ])
+    }
+
     func timelineWidth(for duration: Timecode) -> CGFloat {
         let seconds = CGFloat(duration.microseconds) / 1_000_000
         return max(660, seconds * timelinePixelsPerSecond)
@@ -39,8 +49,8 @@ extension WorkspaceViewController {
         ))
         let time = player.currentTime().seconds
         guard time.isFinite, time >= 0, let first = timelineScrollViews.first else { return }
-        let x = max(0, CGFloat(time) * timelinePixelsPerSecond - first.contentView.bounds.width / 2)
-        first.contentView.scroll(to: NSPoint(x: x, y: 0))
+        let targetX = max(0, CGFloat(time) * timelinePixelsPerSecond - first.contentView.bounds.width / 2)
+        first.contentView.scroll(to: NSPoint(x: targetX, y: 0))
         first.reflectScrolledClipView(first.contentView)
     }
 
@@ -51,9 +61,9 @@ extension WorkspaceViewController {
         else { return }
         synchronizingTimelineScroll = true
         defer { synchronizingTimelineScroll = false }
-        let x = source.bounds.origin.x
+        let scrollX = source.bounds.origin.x
         for scroll in timelineScrollViews where scroll.contentView !== source {
-            scroll.contentView.scroll(to: NSPoint(x: x, y: 0))
+            scroll.contentView.scroll(to: NSPoint(x: scrollX, y: 0))
             scroll.reflectScrolledClipView(scroll.contentView)
         }
     }
