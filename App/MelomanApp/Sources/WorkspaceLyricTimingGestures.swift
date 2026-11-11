@@ -13,6 +13,12 @@ extension WorkspaceViewController {
         strip.onEditCancel = { [weak self] in
             self?.refreshKaraoke()
         }
+        strip.onUndo = { [weak self] in
+            self?.undoLyricChange(nil)
+        }
+        strip.onRedo = { [weak self] in
+            self?.redoLyricChange(nil)
+        }
     }
 
     private func previewLyricTimingEdit(_ lines: [LyricLine], selectedWordID wordID: UUID) {

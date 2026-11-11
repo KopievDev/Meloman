@@ -29,6 +29,8 @@ final class KaraokeTimelineStrip: NSView {
     var onEditPreview: ((UUID, [LyricLine]) -> Void)?
     var onEditCommit: ((UUID, [LyricLine]) -> Void)?
     var onEditCancel: (() -> Void)?
+    var onUndo: (() -> Void)?
+    var onRedo: (() -> Void)?
     var isTimingEditEnabled = false
 
     private struct DragSession {
@@ -186,6 +188,16 @@ final class KaraokeTimelineStrip: NSView {
         guard dragSession != nil else { return }
         dragSession = nil
         onEditCancel?()
+    }
+
+    /// The strip becomes first responder for drag gestures. Route the standard
+    /// macOS Edit menu's Cmd+Z / Cmd+Shift+Z through the lyric undo snapshots.
+    @objc func undo(_: Any?) {
+        onUndo?()
+    }
+
+    @objc func redo(_: Any?) {
+        onRedo?()
     }
 
     private func dragMode(
