@@ -244,7 +244,7 @@ final class MelomanDomainTests: XCTestCase {
         ), 60000)
         XCTAssertNil(LyricTimingEditor.applying(
             .moveWord, to: UUID(), in: [], deltaMicroseconds: 50000,
-            mediaDuration: XCTUnwrap(Timecode(microseconds: 5_000_000))
+            mediaDuration: try XCTUnwrap(Timecode(microseconds: 5_000_000))
         ))
     }
 
