@@ -422,3 +422,25 @@ The preview and MP4 share slot parity from the sorted original lyric start
 times and use the existing K1 word timings for Russian K2. Pause, seek, AI
 alignment with nonmonotonic word times, song gaps and legacy .meloman files
 keep the same behavior. No persisted project format or style setting changes.
+
+## Mouse editing for karaoke timings (PR #21)
+
+Timing edits are now available directly on K1 and K2 word blocks. Drag the
+body of a block to move a word while preserving its duration, or drag its
+left/right edge to trim the start/end. Hold **Option (⌥)** while dragging to
+move the entire lyric line without changing the gaps between words. The active
+boundary snaps to a **50 ms grid**; hold **Shift (⇧)** while dragging to
+temporarily disable snapping. Tiny blocks automatically use body dragging.
+
+The app updates preview, the selected word's time fields and both K1/K2
+tracks while the pointer moves. The edit is committed **once on mouse-up**,
+so Undo and Redo apply to a single action. Dragging cannot produce a negative
+time, a zero-duration word or a word after the end of the audio file.
+A pure model handles all timing constraints and is unit-tested for boundary
+clamping, move/trim, whole-line offsets and grid snapping.
+
+Existing .meloman file structures, K1/K2 word identifiers, text and phonetic
+hints remain unchanged. The original manual timing inspector is still
+available. This first version edits single words or entire lyric lines; ripple
+editing, split, multi-selection and audio waveform snapping are separate
+follow-up enhancements.

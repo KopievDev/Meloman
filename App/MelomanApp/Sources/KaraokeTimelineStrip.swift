@@ -73,8 +73,12 @@ final class KaraokeTimelineStrip: NSView {
             NSBezierPath(roundedRect: rect, xRadius: 4, yRadius: 4).fill()
             if selected, isTimingEditEnabled, rect.width >= 20 {
                 NSColor.white.withAlphaComponent(0.8).setFill()
-                NSRect(x: rect.minX + 3, y: rect.minY + 5, width: 2, height: rect.height - 10).fill()
-                NSRect(x: rect.maxX - 5, y: rect.minY + 5, width: 2, height: rect.height - 10).fill()
+                NSBezierPath(rect: NSRect(
+                    x: rect.minX + 3, y: rect.minY + 5, width: 2, height: rect.height - 10
+                )).fill()
+                NSBezierPath(rect: NSRect(
+                    x: rect.maxX - 5, y: rect.minY + 5, width: 2, height: rect.height - 10
+                )).fill()
             }
 
             if rect.width > 24 {
