@@ -39,10 +39,10 @@ enum KaraokeStyleRendering {
         )
     }
 
-    /// Keep both rows inside the canvas, even with low subtitle positions.
-    /// The current line is on top; the next line is prepared underneath.
+    /// Keep the two fixed screen slots visible even with low subtitle positions.
+    /// Active highlighting can switch slots without physically moving text.
     static func baseline(
-        for row: KaraokeDisplayRow,
+        for slot: KaraokeDisplaySlot,
         style: KaraokeStyle,
         size: CGSize,
         fontSize: CGFloat,
@@ -54,17 +54,17 @@ enum KaraokeStyleRendering {
         let upperLimit = max(bottomInset + spacing + extra, size.height - fontSize * 1.2)
         let preferred = baseline(for: style, size: size, fontSize: fontSize)
         let upper = min(upperLimit, max(bottomInset + spacing + extra, preferred))
-        return row == .current ? upper : upper - spacing
+        return slot == .upper ? upper : upper - spacing
     }
 
     static func pronunciationBaseline(
-        for row: KaraokeDisplayRow,
+        for slot: KaraokeDisplaySlot,
         style: KaraokeStyle,
         size: CGSize,
         mainFontSize: CGFloat
     ) -> CGFloat {
         baseline(
-            for: row,
+            for: slot,
             style: style,
             size: size,
             fontSize: mainFontSize,

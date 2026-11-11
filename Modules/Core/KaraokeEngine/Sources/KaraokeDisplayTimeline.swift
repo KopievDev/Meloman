@@ -4,18 +4,26 @@ import MelomanDomain
 public struct KaraokeDisplayCue: Sendable {
     public let line: LyricLine
     public let row: KaraokeDisplayRow
+    public let slot: KaraokeDisplaySlot
     public let start: Timecode
     public let end: Timecode
 
-    public init(line: LyricLine, row: KaraokeDisplayRow, start: Timecode, end: Timecode) {
+    public init(
+        line: LyricLine,
+        row: KaraokeDisplayRow,
+        slot: KaraokeDisplaySlot,
+        start: Timecode,
+        end: Timecode
+    ) {
         self.line = line
         self.row = row
+        self.slot = slot
         self.start = start
         self.end = end
     }
 }
 
-/// The same two-line layout is evaluated at word boundaries in MP4 export.
+/// The same alternating two-slot layout is evaluated at word boundaries in MP4 export.
 /// Adjacent segments with an unchanged line are merged to limit layer count.
 public enum KaraokeDisplayTimeline {
     public static func cues(from lines: [LyricLine], duration: Timecode) -> [KaraokeDisplayCue] {
@@ -34,27 +42,39 @@ public enum KaraokeDisplayTimeline {
             let end = boundaries[index + 1]
             guard start < end else { continue }
             let frame = KaraokeDisplayEngine.frame(at: start, lines: lines)
-            append(frame.current, row: .current, range: start ..< end, from: lines, to: &current)
-            append(frame.upcoming, row: .upcoming, range: start ..< end, from: lines, to: &upcoming)
+            append(
+                frame.current, placement: (.current, frame.currentSlot),
+                range: start ..< end, from: lines, to: &current
+            )
+            append(
+                frame.upcoming, placement: (.upcoming, frame.upcomingSlot),
+                range: start ..< end, from: lines, to: &upcoming
+            )
         }
         return current + upcoming
     }
 
     private static func append(
         _ frame: KaraokeFrame?,
-        row: KaraokeDisplayRow,
+        placement: (role: KaraokeDisplayRow, slot: KaraokeDisplaySlot),
         range: Range<Timecode>,
         from lines: [LyricLine],
         to cues: inout [KaraokeDisplayCue]
     ) {
         guard let frame, let line = lines.first(where: { $0.id == frame.lineID }) else { return }
-        if let previous = cues.last, previous.line.id == frame.lineID, previous.end == range.lowerBound {
+        let sameLine = cues.last?.line.id == frame.lineID
+        let sameSlot = cues.last?.slot == placement.slot
+        let contiguous = cues.last?.end == range.lowerBound
+        if sameLine, sameSlot, contiguous {
+            let start = cues[cues.count - 1].start
             cues[cues.count - 1] = KaraokeDisplayCue(
-                line: line, row: row, start: previous.start, end: range.upperBound
+                line: line, row: placement.role, slot: placement.slot,
+                start: start, end: range.upperBound
             )
         } else {
             cues.append(KaraokeDisplayCue(
-                line: line, row: row, start: range.lowerBound, end: range.upperBound
+                line: line, row: placement.role, slot: placement.slot,
+                start: range.lowerBound, end: range.upperBound
             ))
         }
     }

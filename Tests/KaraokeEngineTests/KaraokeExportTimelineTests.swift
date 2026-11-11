@@ -83,6 +83,8 @@ final class KaraokeExportTimelineTests: XCTestCase {
         XCTAssertEqual(upcoming.first?.start.microseconds, 0)
         XCTAssertEqual(upcoming.first?.end.microseconds, 3_000_000)
         XCTAssertEqual(current[1].start.microseconds, 3_000_000)
+        XCTAssertEqual(current.map(\.slot), [.upper, .lower, .upper])
+        XCTAssertEqual(upcoming.map(\.slot), [.lower, .upper])
     }
 
     func testTwoLineExportAndPreviewAgreeAtTransitions() throws {
@@ -100,6 +102,12 @@ final class KaraokeExportTimelineTests: XCTestCase {
             }
             XCTAssertEqual(current?.line.id, preview.current?.lineID)
             XCTAssertEqual(next?.line.id, preview.upcoming?.lineID)
+            if preview.current != nil {
+                XCTAssertEqual(current?.slot, preview.currentSlot)
+            }
+            if preview.upcoming != nil {
+                XCTAssertEqual(next?.slot, preview.upcomingSlot)
+            }
         }
     }
 

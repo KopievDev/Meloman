@@ -103,7 +103,7 @@ final class KaraokeEngineTests: XCTestCase {
         XCTAssertTrue(display.upcoming?.words.allSatisfy { $0.progress == 0 } == true)
     }
 
-    func testNextLineMovesToTopWhenSingingStarts() throws {
+    func testNextLineRemainsInLowerSlotWhenSingingStarts() throws {
         let duration = try XCTUnwrap(Timecode(microseconds: 9_000_000))
         let lyrics = LyricsDraftBuilder.build(text: "Первая\nВторая\nТретья", duration: duration)
         let before = try XCTUnwrap(Timecode(microseconds: 2_900_000))
@@ -115,7 +115,41 @@ final class KaraokeEngineTests: XCTestCase {
         XCTAssertEqual(prepared.upcoming?.lineID, lyrics[1].id)
         XCTAssertEqual(changed.current?.lineID, lyrics[1].id)
         XCTAssertEqual(changed.upcoming?.lineID, lyrics[2].id)
+        XCTAssertEqual(prepared.currentSlot, .upper)
+        XCTAssertEqual(prepared.upcomingSlot, .lower)
+        XCTAssertEqual(changed.currentSlot, .lower)
+        XCTAssertEqual(prepared.upcomingSlot, changed.currentSlot)
+        XCTAssertEqual(changed.upcomingSlot, .upper)
         XCTAssertTrue((changed.current?.words.first?.progress ?? 0) > 0)
+    }
+
+    func testIdenticalRepeatedPhrasesAlternateHighlightWithoutJump() throws {
+        let duration = try XCTUnwrap(Timecode(microseconds: 12_000_000))
+        let lines = LyricsDraftBuilder.build(
+            text: "Down, down, down\nDown, down, down\nDown, down, down\nDown, down, down",
+            duration: duration
+        )
+        for index in 0 ..< lines.count - 1 {
+            let start = try XCTUnwrap(lines[index].words.map(\.start).min())
+            let after = KaraokeDisplayEngine.frame(at: start, lines: lines)
+            let nextStart = try XCTUnwrap(lines[index + 1].words.map(\.start).min())
+            let following = KaraokeDisplayEngine.frame(at: nextStart, lines: lines)
+            XCTAssertEqual(after.upcoming?.lineID, following.current?.lineID)
+            XCTAssertEqual(after.upcomingSlot, following.currentSlot)
+            XCTAssertNotEqual(after.currentSlot, following.currentSlot)
+        }
+    }
+
+    func testSeekSelectsCorrectSlotWithoutPlaybackHistory() throws {
+        let duration = try XCTUnwrap(Timecode(microseconds: 12_000_000))
+        let lyrics = LyricsDraftBuilder.build(text: "One\nTwo\nThree\nFour", duration: duration)
+        let time = try XCTUnwrap(Timecode(microseconds: 9_500_000))
+        let later = KaraokeDisplayEngine.frame(at: time, lines: lyrics)
+        let earlier = KaraokeDisplayEngine.frame(at: .zero, lines: lyrics)
+        let repeated = KaraokeDisplayEngine.frame(at: time, lines: lyrics)
+        XCTAssertEqual(later, repeated)
+        XCTAssertEqual(later.currentSlot, .lower)
+        XCTAssertEqual(earlier.currentSlot, .upper)
     }
 
     func testTwoLineSelectionSurvivesNonMonotonicAITimes() throws {
