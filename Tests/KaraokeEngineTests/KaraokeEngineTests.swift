@@ -92,6 +92,38 @@ final class KaraokeEngineTests: XCTestCase {
         XCTAssertEqual(KaraokeEngine.frame(at: time, lines: [previous, current])?.lineID, current.id)
     }
 
+    func testExportGlyphRasterRemainsOnPreviewBaselineAtAllScales() {
+        let canvas = CGSize(width: 1280, height: 720)
+        for scale: CGFloat in [1, 0.75, 0.35] {
+            let geometry = KaraokeSubtitleGeometry(
+                textWidth: 1040, ascent: 60, descent: 15
+            )
+            let targetBaseline: CGFloat = 125
+            let center = geometry.layerCenter(
+                in: canvas, baseline: targetBaseline, scale: scale
+            )
+            let actualBaseline = center.y -
+                geometry.size.height * scale / 2 +
+                geometry.baselineFromBottom * scale
+
+            XCTAssertEqual(actualBaseline, targetBaseline, accuracy: 0.001)
+            XCTAssertEqual(center.x, canvas.width / 2, accuracy: 0.001)
+        }
+    }
+
+    func testCyrillicSublineUsesSameGlyphBaselineCoordinates() {
+        let geometry = KaraokeSubtitleGeometry(
+            textWidth: 640, ascent: 27, descent: 8
+        )
+        let baseline: CGFloat = 82
+        let center = geometry.layerCenter(
+            in: CGSize(width: 1280, height: 720), baseline: baseline, scale: 1
+        )
+        let reconstructed = center.y - geometry.size.height / 2 +
+            geometry.baselineFromBottom
+        XCTAssertEqual(reconstructed, baseline, accuracy: 0.001)
+    }
+
     func testTwoLinesShowUpcomingTextBeforeItsFirstWord() throws {
         let duration = try XCTUnwrap(Timecode(microseconds: 12_000_000))
         let lyrics = LyricsDraftBuilder.build(text: "Сейчас поём\nСледующая строка\nФинал", duration: duration)

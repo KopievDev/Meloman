@@ -76,30 +76,38 @@ enum KaraokeExportOverlay {
             text, font: font, color: rowColor(row: cue.row, settings: settings)
         )
         let ctLine = CTLineCreateWithAttributedString(measure)
-        let width = CGFloat(CTLineGetTypographicBounds(ctLine, nil, nil, nil))
+        var ascent: CGFloat = 0
+        var descent: CGFloat = 0
+        let width = CGFloat(CTLineGetTypographicBounds(ctLine, &ascent, &descent, nil))
         guard width > 0 else { return nil }
 
+        let geometry = KaraokeSubtitleGeometry(textWidth: width, ascent: ascent, descent: descent)
+        guard let bitmap = KaraokeExportGlyphRasterizer.render(ctLine, geometry: geometry) else {
+            return nil
+        }
+
         let scale = min(1, max(0.01, (size.width - 36) / width))
-        let height = CGFloat(CTFontGetSize(font)) * 1.5
         let baseline = lineBaseline(for: cue, settings: settings, size: size)
         let root = CALayer()
-        root.bounds = CGRect(x: 0, y: 0, width: width, height: height)
-        root.position = CGPoint(x: size.width / 2, y: baseline + height * scale / 2)
+        root.bounds = CGRect(origin: .zero, size: geometry.size)
+        root.position = geometry.layerCenter(in: size, baseline: baseline, scale: scale)
         root.transform = CATransform3DMakeScale(scale, scale, 1)
+        root.contents = bitmap
+        root.contentsScale = KaraokeExportGlyphRasterizer.pixelScale
         root.opacity = 0
         root.add(visibilityAnimation(for: cue, duration: duration), forKey: "visibility")
-        root.addSublayer(textLayer(measure, width: width, height: height))
 
         if cue.row == .current {
             let highlightColor = KaraokeStyleRendering.color(style.highlightColor)
             addWordHighlights(
                 to: root,
                 cue: cue,
-                visible: values,
-                measured: ctLine,
                 appearance: HighlightAppearance(
                     font: font,
-                    color: settings.isPhonetic ? highlightColor.withAlphaComponent(0.85) : highlightColor
+                    color: settings.isPhonetic ? highlightColor.withAlphaComponent(0.85) : highlightColor,
+                    values: values,
+                    measured: ctLine,
+                    geometry: geometry
                 )
             )
         }
@@ -148,62 +156,51 @@ enum KaraokeExportOverlay {
     private struct HighlightAppearance {
         let font: CTFont
         let color: NSColor
+        let values: [String]
+        let measured: CTLine
+        let geometry: KaraokeSubtitleGeometry
     }
 
     private static func addWordHighlights(
         to root: CALayer,
         cue: KaraokeDisplayCue,
-        visible: [String],
-        measured: CTLine,
         appearance: HighlightAppearance
     ) {
-        let fullText = visible.joined(separator: " ")
-        let height = root.bounds.height
-        let words = cue.line.words
+        let highlight = attributedText(
+            appearance.values.joined(separator: " "),
+            font: appearance.font,
+            color: appearance.color
+        )
+        let line = CTLineCreateWithAttributedString(highlight)
+        guard let image = KaraokeExportGlyphRasterizer.render(line, geometry: appearance.geometry) else {
+            return
+        }
+
         var offset = 0
-        for (index, word) in words.enumerated() {
-            let start = CTLineGetOffsetForStringIndex(measured, offset, nil)
-            offset += (visible[index] as NSString).length
-            let end = CTLineGetOffsetForStringIndex(measured, offset, nil)
+        for (index, word) in cue.line.words.enumerated() {
+            let start = CTLineGetOffsetForStringIndex(appearance.measured, offset, nil)
+            offset += (appearance.values[index] as NSString).length
+            let end = CTLineGetOffsetForStringIndex(appearance.measured, offset, nil)
 
             if !word.isHidden, end > start {
-                let highlight = attributedText(
-                    fullText,
-                    font: appearance.font,
-                    color: appearance.color
-                )
-                let layer = textLayer(highlight, width: root.bounds.width, height: height)
+                let layer = CALayer()
+                layer.frame = root.bounds
+                layer.contents = image
+                layer.contentsScale = KaraokeExportGlyphRasterizer.pixelScale
+
                 let mask = CALayer()
                 mask.backgroundColor = NSColor.white.cgColor
                 mask.anchorPoint = CGPoint(x: 0, y: 0)
-                mask.position = CGPoint(x: start, y: 0)
-                mask.bounds = CGRect(x: 0, y: 0, width: 0, height: height)
+                mask.position = CGPoint(x: appearance.geometry.padding + start, y: 0)
+                mask.bounds = CGRect(x: 0, y: 0, width: 0, height: root.bounds.height)
                 mask.add(fillAnimation(word, width: end - start), forKey: "fill")
                 layer.mask = mask
                 root.addSublayer(layer)
             }
-            if index < words.count - 1 {
+            if index < cue.line.words.count - 1 {
                 offset += 1 // UTF-16 separator between words
             }
         }
-    }
-
-    private static func textLayer(
-        _ attributed: NSAttributedString,
-        width: CGFloat,
-        height: CGFloat
-    ) -> CATextLayer {
-        let layer = CATextLayer()
-        layer.frame = CGRect(x: 0, y: 0, width: width, height: height)
-        layer.string = attributed
-        layer.alignmentMode = .left
-        layer.contentsScale = 2
-        layer.isWrapped = false
-        layer.shadowColor = NSColor.black.cgColor
-        layer.shadowOpacity = 0.8
-        layer.shadowRadius = 3
-        layer.shadowOffset = CGSize(width: 1, height: -2)
-        return layer
     }
 
     private static func attributedText(
