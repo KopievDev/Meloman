@@ -155,7 +155,7 @@ final class KaraokeTimelineStrip: NSView {
         dragSession = drag
     }
 
-    override func mouseUp(with event: NSEvent) {
+    override func mouseUp(with _: NSEvent) {
         guard let drag = dragSession else { return }
         dragSession = nil
         if drag.didDrag {
@@ -169,7 +169,7 @@ final class KaraokeTimelineStrip: NSView {
         }
     }
 
-    override func cancelOperation(_ sender: Any?) {
+    override func cancelOperation(_: Any?) {
         guard dragSession != nil else { return }
         dragSession = nil
         onEditCancel?()
@@ -186,8 +186,12 @@ final class KaraokeTimelineStrip: NSView {
         let frame = rectForWord(word)
         guard frame.width >= 20 else { return .moveWord }
         let edge = min(9, frame.width / 4)
-        if point.x - frame.minX <= edge { return .trimStart }
-        if frame.maxX - point.x <= edge { return .trimEnd }
+        if point.x - frame.minX <= edge {
+            return .trimStart
+        }
+        if frame.maxX - point.x <= edge {
+            return .trimEnd
+        }
         return .moveWord
     }
 

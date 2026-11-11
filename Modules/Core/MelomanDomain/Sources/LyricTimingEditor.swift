@@ -12,7 +12,7 @@ public enum LyricTimingEditMode: Equatable, Sendable {
 /// Pure timeline edit: the caller always applies a delta to the original
 /// snapshot, not to previous drag updates, to avoid accumulated rounding drift.
 public enum LyricTimingEditor {
-    public static let minimumWordMicroseconds: Int64 = 50_000
+    public static let minimumWordMicroseconds: Int64 = 50000
 
     public static func applying(
         _ mode: LyricTimingEditMode,
@@ -88,7 +88,7 @@ public enum LyricTimingEditor {
     public static func snappedDelta(
         from boundary: Timecode,
         proposedDelta: Int64,
-        intervalMicroseconds: Int64 = 50_000
+        intervalMicroseconds: Int64 = 50000
     ) -> Int64 {
         guard intervalMicroseconds > 0 else { return proposedDelta }
         let target = Double(boundary.microseconds) + Double(proposedDelta)
