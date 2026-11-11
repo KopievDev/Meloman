@@ -242,9 +242,9 @@ final class MelomanDomainTests: XCTestCase {
         XCTAssertEqual(LyricTimingEditor.snappedDelta(
             from: anchor, proposedDelta: 60000, intervalMicroseconds: 0
         ), 60000)
-        XCTAssertNil(LyricTimingEditor.applying(
+        XCTAssertNil(try LyricTimingEditor.applying(
             .moveWord, to: UUID(), in: [], deltaMicroseconds: 50000,
-            mediaDuration: try XCTUnwrap(Timecode(microseconds: 5_000_000))
+            mediaDuration: XCTUnwrap(Timecode(microseconds: 5_000_000))
         ))
     }
 
