@@ -163,6 +163,91 @@ final class MelomanDomainTests: XCTestCase {
         XCTAssertNil(track.text(for: wordID))
     }
 
+    func testDraggingWordKeepsIdentityAndPronunciationTiming() throws {
+        let duration = try XCTUnwrap(Timecode(microseconds: 10_000_000))
+        let first = try XCTUnwrap(LyricWord(
+            text: "Look", start: .zero,
+            end: XCTUnwrap(Timecode(microseconds: 500_000)),
+            alignmentConfidence: 0.45
+        ))
+        let second = try XCTUnwrap(LyricWord(
+            text: "you", start: XCTUnwrap(Timecode(microseconds: 800_000)),
+            end: XCTUnwrap(Timecode(microseconds: 1_200_000))
+        ))
+        let original = [LyricLine(words: [first, second])]
+        let modified = try XCTUnwrap(LyricTimingEditor.applying(
+            .moveWord, to: second.id, in: original,
+            deltaMicroseconds: 500_000, mediaDuration: duration
+        ))
+        XCTAssertEqual(modified[0].words[1].start.microseconds, 1_300_000)
+        XCTAssertEqual(modified[0].words[1].end.microseconds, 1_700_000)
+        XCTAssertEqual(modified[0].words[1].id, second.id)
+        XCTAssertEqual(modified[0].words[0], first)
+        XCTAssertEqual(original[0].words[1], second)
+    }
+
+    func testTrimmingWordClampsToMinimumDurationAndTrackBounds() throws {
+        let duration = try XCTUnwrap(Timecode(microseconds: 1_500_000))
+        let word = try XCTUnwrap(LyricWord(
+            text: "песня", start: XCTUnwrap(Timecode(microseconds: 300_000)),
+            end: XCTUnwrap(Timecode(microseconds: 800_000))
+        ))
+        let lines = [LyricLine(words: [word])]
+        let trimmedStart = try XCTUnwrap(LyricTimingEditor.applying(
+            .trimStart, to: word.id, in: lines,
+            deltaMicroseconds: 3_000_000, mediaDuration: duration
+        ))
+        XCTAssertEqual(trimmedStart[0].words[0].start.microseconds, 750_000)
+        XCTAssertEqual(trimmedStart[0].words[0].end.microseconds, 800_000)
+
+        let trimmedEnd = try XCTUnwrap(LyricTimingEditor.applying(
+            .trimEnd, to: word.id, in: lines,
+            deltaMicroseconds: -3_000_000, mediaDuration: duration
+        ))
+        XCTAssertEqual(trimmedEnd[0].words[0].start.microseconds, 300_000)
+        XCTAssertEqual(trimmedEnd[0].words[0].end.microseconds, 350_000)
+
+        let bounded = try XCTUnwrap(LyricTimingEditor.applying(
+            .moveWord, to: word.id, in: lines,
+            deltaMicroseconds: 10_000_000, mediaDuration: duration
+        ))
+        XCTAssertEqual(bounded[0].words[0].end.microseconds, duration.microseconds)
+    }
+
+    func testOptionDraggingMovesWholeLyricLineWithoutChangingGaps() throws {
+        let duration = try XCTUnwrap(Timecode(microseconds: 2_000_000))
+        let first = try XCTUnwrap(LyricWord(
+            text: "Сорвал", start: XCTUnwrap(Timecode(microseconds: 200_000)),
+            end: XCTUnwrap(Timecode(microseconds: 450_000))
+        ))
+        let second = try XCTUnwrap(LyricWord(
+            text: "ветер", start: XCTUnwrap(Timecode(microseconds: 700_000)),
+            end: XCTUnwrap(Timecode(microseconds: 900_000))
+        ))
+        let lines = [LyricLine(words: [first, second])]
+        let moved = try XCTUnwrap(LyricTimingEditor.applying(
+            .moveLine, to: first.id, in: lines,
+            deltaMicroseconds: -5_000_000, mediaDuration: duration
+        ))
+        XCTAssertEqual(moved[0].words[0].start.microseconds, 0)
+        XCTAssertEqual(moved[0].words[1].start.microseconds, 500_000)
+        XCTAssertEqual(moved[0].words[1].end.microseconds, 700_000)
+    }
+
+    func testTimingSnapUsesAbsoluteBoundaryAndRejectsUnknownWord() throws {
+        let anchor = try XCTUnwrap(Timecode(microseconds: 123_000))
+        XCTAssertEqual(LyricTimingEditor.snappedDelta(
+            from: anchor, proposedDelta: 60_000
+        ), 77_000)
+        XCTAssertEqual(LyricTimingEditor.snappedDelta(
+            from: anchor, proposedDelta: 60_000, intervalMicroseconds: 0
+        ), 60_000)
+        XCTAssertNil(LyricTimingEditor.applying(
+            .moveWord, to: UUID(), in: [], deltaMicroseconds: 50_000,
+            mediaDuration: XCTUnwrap(Timecode(microseconds: 5_000_000))
+        ))
+    }
+
     func testProjectJSONRoundTripPreservesLyricsAndTracks() throws {
         let start = try XCTUnwrap(Timecode(microseconds: 100_000))
         let end = try XCTUnwrap(Timecode(microseconds: 750_000))
