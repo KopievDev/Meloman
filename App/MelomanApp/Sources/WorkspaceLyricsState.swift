@@ -21,11 +21,13 @@ extension WorkspaceViewController {
             selectedWordID = words.first?.id
         }
         lyricStrip.selectedWordID = selectedWordID
+        lyricStrip.isTimingEditEnabled = mediaID != nil && !isBusy
         pronunciationStrip.lines = lyrics
         pronunciationStrip.duration = lyricStrip.duration
         pronunciationStrip.pronunciation = mediaID.map { project.karaokePronunciation(for: $0) }
         pronunciationStrip.setFrameSize(NSSize(width: max(660, seconds * 45), height: 32))
         pronunciationStrip.selectedWordID = selectedWordID
+        pronunciationStrip.isTimingEditEnabled = mediaID != nil && !isBusy
         displaySelectedLyricWord()
         refreshPronunciationControls()
 
