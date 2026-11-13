@@ -25,5 +25,4 @@ final class AudioWaveformTests: XCTestCase {
         let waveform = AudioWaveform(duration: duration, binsPerSecond: 80)
         XCTAssertEqual(waveform.peaks.count, 300_000)
     }
-
 }
