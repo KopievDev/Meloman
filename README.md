@@ -449,3 +449,19 @@ The timeline also has a **45–260 px/s zoom slider**, initially at 120 px/s,
 so even short rap syllables have usable drag handles. K1, K2 and V3 share the
 same scale and synchronize horizontal scroll positions. Zoom recenters the
 timeline near the current playback position.
+
+## A1 audio waveform for accurate karaoke timing (PR #22)
+
+The **A1 Аудио** row now draws a peak-amplitude waveform from the original
+MP3/WAV/M4A or embedded MP4/MOV audio. Audio is decoded in a cancellable
+utility task, reduced to at most 300,000 time-aligned samples and cached only
+in RAM per media asset. No source files, stems or portable project schema are
+modified. Switching files cancels outdated extraction; videos with no audio
+show a harmless explanation instead of breaking the editor.
+
+A1 shares the exact same timeline width, 45–260 px/sec zoom and horizontal
+scroll position as K1 lyrics, K2 pronunciation and V3 graphic overlays. Click
+or drag on the waveform to seek precisely, then adjust lyric timing handles
+against the visible phrase attacks and pauses. The waveform uses the original
+audio mix (not an AI-generated vocal stem); selecting alternate stems is a
+possible follow-up once audio-source routing is unified.
