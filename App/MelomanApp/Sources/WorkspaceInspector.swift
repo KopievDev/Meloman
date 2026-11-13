@@ -71,10 +71,11 @@ extension WorkspaceViewController {
         let overlayScroll = makeGraphicTimelineScroll()
         let pronunciationScroll = makePronunciationTimelineScroll()
 
+        configureTimelineZoom([overlayScroll, wordScroll, pronunciationScroll])
         let progressPanel = makeAIProgressPanel()
         let timelineViews = [
             heading, timelineInfo, tracks, overlayScroll, wordScroll, pronunciationScroll,
-            statusLabel, progressPanel,
+            timelineZoomSlider, timelineZoomLabel, statusLabel, progressPanel,
         ]
         for child in timelineViews {
             child.translatesAutoresizingMaskIntoConstraints = false
@@ -109,7 +110,7 @@ extension WorkspaceViewController {
             progressPanel.widthAnchor.constraint(equalToConstant: 390),
             progressPanel.heightAnchor.constraint(equalToConstant: 65),
         ])
-
+        layoutTimelineZoom(in: panel, beside: heading)
         return panel
     }
 
@@ -135,6 +136,8 @@ extension WorkspaceViewController {
         lyricStrip.onSelect = { [weak self] id, time in
             self?.selectLyricWord(id, seekTo: time)
         }
+        configureLyricTimingGestures(for: lyricStrip)
+        lyricStrip.toolTip = "Тяните слово для сдвига, края — для длительности. ⌥ — вся строка, ⇧ — без сетки."
         wordScroll.documentView = lyricStrip
         return wordScroll
     }
@@ -147,6 +150,8 @@ extension WorkspaceViewController {
         pronunciationStrip.onSelect = { [weak self] id, time in
             self?.selectLyricWord(id, seekTo: time)
         }
+        configureLyricTimingGestures(for: pronunciationStrip)
+        pronunciationStrip.toolTip = "K2 использует времена K1. Перетаскивание корректирует оба трека."
         scroll.documentView = pronunciationStrip
         return scroll
     }

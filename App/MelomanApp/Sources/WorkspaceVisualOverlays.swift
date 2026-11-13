@@ -55,8 +55,9 @@ extension WorkspaceViewController {
         visualOverlayStrip.overlays = overlays
         visualOverlayStrip.selectedOverlayID = selectedOverlayID
         visualOverlayStrip.duration = project.media.first(where: { $0.id == selectedMediaID })?.duration ?? .zero
-        let seconds = Double(visualOverlayStrip.duration.microseconds) / 1_000_000
-        visualOverlayStrip.setFrameSize(NSSize(width: max(660, seconds * 45), height: 32))
+        visualOverlayStrip.setFrameSize(NSSize(
+            width: timelineWidth(for: visualOverlayStrip.duration), height: 32
+        ))
         preview.setVisualOverlays(overlays, urls: overlayURLs)
         let current = player.currentTime().seconds
         preview.updateVisualOverlays(at: current.isFinite ? max(0, current) : 0)

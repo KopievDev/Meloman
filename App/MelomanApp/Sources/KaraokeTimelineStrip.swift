@@ -26,6 +26,28 @@ final class KaraokeTimelineStrip: NSView {
     }
 
     var onSelect: ((UUID, Timecode) -> Void)?
+    var onEditPreview: ((UUID, [LyricLine]) -> Void)?
+    var onEditCommit: ((UUID, [LyricLine]) -> Void)?
+    var onEditCancel: (() -> Void)?
+    var onUndo: (() -> Void)?
+    var onRedo: (() -> Void)?
+    var isTimingEditEnabled = false
+
+    private struct DragSession {
+        let wordID: UUID
+        let original: [LyricLine]
+        let originX: CGFloat
+        let anchor: Timecode
+        let mode: LyricTimingEditMode
+        var didDrag = false
+        var latest: [LyricLine]?
+    }
+
+    private var dragSession: DragSession?
+
+    override var acceptsFirstResponder: Bool {
+        true
+    }
 
     override var isFlipped: Bool {
         true
@@ -35,43 +57,9 @@ final class KaraokeTimelineStrip: NSView {
         super.draw(dirtyRect)
         NSColor.windowBackgroundColor.setFill()
         NSBezierPath(rect: bounds).fill()
-
         for word in lines.flatMap(\.words) {
-            let rect = rectForWord(word)
-            guard rect.intersects(dirtyRect), rect.width > 0 else { continue }
-            let selected = word.id == selectedWordID
-            let fill: NSColor = if selected {
-                .systemYellow
-            } else if let confidence = word.alignmentConfidence, confidence < 0.25 {
-                NSColor.systemOrange.withAlphaComponent(0.75)
-            } else if pronunciation != nil {
-                NSColor.systemIndigo.withAlphaComponent(pronunciation?.isEnabled == true ? 0.75 : 0.25)
-            } else {
-                NSColor.systemTeal.withAlphaComponent(0.65)
-            }
-            fill.setFill()
-            NSBezierPath(roundedRect: rect, xRadius: 4, yRadius: 4).fill()
-
-            if rect.width > 24 {
-                let paragraph = NSMutableParagraphStyle()
-                paragraph.lineBreakMode = .byTruncatingTail
-                let title = if word.isHidden {
-                    "____"
-                } else {
-                    pronunciation?.text(for: word.id) ?? (pronunciation == nil ? word.text : "")
-                }
-                let attributes: [NSAttributedString.Key: Any] = [
-                    .font: NSFont.systemFont(ofSize: 11, weight: .medium),
-                    .foregroundColor: NSColor.black,
-                    .paragraphStyle: paragraph,
-                ]
-                (title as NSString).draw(
-                    in: rect.insetBy(dx: 4, dy: 6),
-                    withAttributes: attributes
-                )
-            }
+            drawWord(word, in: dirtyRect)
         }
-
         let cursorX = xPosition(playhead)
         NSColor.systemRed.setStroke()
         let cursor = NSBezierPath()
@@ -81,12 +69,155 @@ final class KaraokeTimelineStrip: NSView {
         cursor.stroke()
     }
 
+    private func drawWord(_ word: LyricWord, in dirtyRect: NSRect) {
+        let rect = rectForWord(word)
+        guard rect.intersects(dirtyRect), rect.width > 0 else { return }
+        let selected = word.id == selectedWordID
+        wordColor(word, selected: selected).setFill()
+        NSBezierPath(roundedRect: rect, xRadius: 4, yRadius: 4).fill()
+        if selected, isTimingEditEnabled, rect.width >= 20 {
+            drawWordHandles(in: rect)
+        }
+        if rect.width > 24 {
+            drawWordTitle(word, in: rect)
+        }
+    }
+
+    private func wordColor(_ word: LyricWord, selected: Bool) -> NSColor {
+        if selected {
+            return .systemYellow
+        }
+        if let confidence = word.alignmentConfidence, confidence < 0.25 {
+            return NSColor.systemOrange.withAlphaComponent(0.75)
+        }
+        if pronunciation != nil {
+            return NSColor.systemIndigo.withAlphaComponent(pronunciation?.isEnabled == true ? 0.75 : 0.25)
+        }
+        return NSColor.systemTeal.withAlphaComponent(0.65)
+    }
+
+    private func drawWordHandles(in rect: NSRect) {
+        NSColor.white.withAlphaComponent(0.8).setFill()
+        NSBezierPath(rect: NSRect(
+            x: rect.minX + 3, y: rect.minY + 5, width: 2, height: rect.height - 10
+        )).fill()
+        NSBezierPath(rect: NSRect(
+            x: rect.maxX - 5, y: rect.minY + 5, width: 2, height: rect.height - 10
+        )).fill()
+    }
+
+    private func drawWordTitle(_ word: LyricWord, in rect: NSRect) {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byTruncatingTail
+        let title = if word.isHidden {
+            "____"
+        } else {
+            pronunciation?.text(for: word.id) ?? (pronunciation == nil ? word.text : "")
+        }
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 11, weight: .medium),
+            .foregroundColor: NSColor.black,
+            .paragraphStyle: paragraph,
+        ]
+        (title as NSString).draw(
+            in: rect.insetBy(dx: 4, dy: 6),
+            withAttributes: attributes
+        )
+    }
+
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         guard let chosen = lines.flatMap(\.words).first(where: { rectForWord($0).contains(point) }) else {
             return
         }
-        onSelect?(chosen.id, chosen.start)
+        guard isTimingEditEnabled, onEditCommit != nil else {
+            onSelect?(chosen.id, chosen.start)
+            return
+        }
+        window?.makeFirstResponder(self)
+        let mode = dragMode(for: chosen, at: point, modifiers: event.modifierFlags)
+        let anchor = mode == .trimEnd ? chosen.end : chosen.start
+        dragSession = DragSession(
+            wordID: chosen.id, original: lines, originX: point.x,
+            anchor: anchor, mode: mode
+        )
+        selectedWordID = chosen.id
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard var drag = dragSession,
+              duration.microseconds > 0,
+              bounds.width > 0
+        else { return }
+        let point = convert(event.locationInWindow, from: nil)
+        let distance = point.x - drag.originX
+        guard drag.didDrag || abs(distance) >= 3 else { return }
+        drag.didDrag = true
+
+        let raw = (Double(distance) / Double(bounds.width)) * Double(duration.microseconds)
+        let safe = max(Double(Int64.min) + 1, min(Double(Int64.max) - 1024, raw))
+        var delta = Int64(safe.rounded())
+        if !event.modifierFlags.contains(.shift) {
+            delta = LyricTimingEditor.snappedDelta(from: drag.anchor, proposedDelta: delta)
+        }
+        if let edited = LyricTimingEditor.applying(
+            drag.mode, to: drag.wordID, in: drag.original,
+            deltaMicroseconds: delta, mediaDuration: duration
+        ) {
+            drag.latest = edited
+            onEditPreview?(drag.wordID, edited)
+        }
+        dragSession = drag
+    }
+
+    override func mouseUp(with _: NSEvent) {
+        guard let drag = dragSession else { return }
+        dragSession = nil
+        if drag.didDrag {
+            if let edited = drag.latest, edited != drag.original {
+                onEditCommit?(drag.wordID, edited)
+            } else {
+                onEditCancel?()
+            }
+        } else if let word = drag.original.flatMap(\.words).first(where: { $0.id == drag.wordID }) {
+            onSelect?(word.id, word.start)
+        }
+    }
+
+    override func cancelOperation(_: Any?) {
+        guard dragSession != nil else { return }
+        dragSession = nil
+        onEditCancel?()
+    }
+
+    /// The strip becomes first responder for drag gestures. Route the standard
+    /// macOS Edit menu's Cmd+Z / Cmd+Shift+Z through the lyric undo snapshots.
+    @objc func undo(_: Any?) {
+        onUndo?()
+    }
+
+    @objc func redo(_: Any?) {
+        onRedo?()
+    }
+
+    private func dragMode(
+        for word: LyricWord,
+        at point: NSPoint,
+        modifiers: NSEvent.ModifierFlags
+    ) -> LyricTimingEditMode {
+        if modifiers.contains(.option) {
+            return .moveLine
+        }
+        let frame = rectForWord(word)
+        guard frame.width >= 20 else { return .moveWord }
+        let edge = min(9, frame.width / 4)
+        if point.x - frame.minX <= edge {
+            return .trimStart
+        }
+        if frame.maxX - point.x <= edge {
+            return .trimEnd
+        }
+        return .moveWord
     }
 
     private func xPosition(_ time: Timecode) -> CGFloat {

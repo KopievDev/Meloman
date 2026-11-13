@@ -63,6 +63,11 @@ final class WorkspaceViewController: NSViewController {
     var activeBackgroundVideoURL: URL?
     var backgroundDurationTask: Task<Void, Never>?
     let lyricStrip = KaraokeTimelineStrip()
+    let timelineZoomSlider = NSSlider(value: 120, minValue: 45, maxValue: 260, target: nil, action: nil)
+    let timelineZoomLabel = NSTextField(labelWithString: "120 px/с")
+    var timelinePixelsPerSecond: CGFloat = 120
+    var timelineScrollViews: [NSScrollView] = []
+    var synchronizingTimelineScroll = false
     let pronunciationStrip = KaraokeTimelineStrip()
     let pronunciationToggle = NSButton(
         checkboxWithTitle: "Показывать русское произношение", target: nil, action: nil

@@ -4,6 +4,11 @@ import AppKit
 extension WorkspaceViewController {
     func makeLyricsInspectorControls() -> NSView {
         let title = label("РЕДАКТОР КАРАОКЕ", size: 11, weight: .semibold, color: .secondaryLabelColor)
+        let dragHelp = label(
+            "K1/K2: тяните блок или его край · ⌥ вся строка · ⇧ без привязки",
+            size: 10, color: .secondaryLabelColor
+        )
+        dragHelp.maximumNumberOfLines = 2
         lyricSelectionInfo.textColor = .secondaryLabelColor
         lyricSelectionInfo.font = .systemFont(ofSize: 11)
 
@@ -29,6 +34,7 @@ extension WorkspaceViewController {
         let form = NSStackView(views: [
             title,
             lyricSelectionInfo,
+            dragHelp,
             lyricTextField,
             timings,
             lyricHiddenCheck,
