@@ -31,11 +31,11 @@ extension WorkspaceViewController {
         waveformTask = Task { [weak self] in
             do {
                 let result = try await AudioWaveformSampler.sample(url: url, duration: media.duration)
-                guard !Task.isCancelled, let self, self.selectedMediaID == media.id else { return }
+                guard !Task.isCancelled, let self, selectedMediaID == media.id else { return }
                 cachedWaveforms[media.id] = result
                 waveformStrip.waveform = result
             } catch {
-                guard !Task.isCancelled, let self, self.selectedMediaID == media.id else { return }
+                guard !Task.isCancelled, let self, selectedMediaID == media.id else { return }
                 waveformStrip.message = error.localizedDescription
             }
         }
