@@ -41,6 +41,15 @@ extension WorkspaceViewController {
         }
     }
 
+    func layoutAudioWaveform(in panel: NSView, scroll: NSScrollView, tracks: NSStackView) {
+        NSLayoutConstraint.activate([
+            scroll.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 137),
+            scroll.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -18),
+            scroll.centerYAnchor.constraint(equalTo: tracks.arrangedSubviews[4].centerYAnchor),
+            scroll.heightAnchor.constraint(equalToConstant: 34),
+        ])
+    }
+
     func seekFromWaveform(to time: Timecode) {
         let target = CMTime(value: time.microseconds, timescale: 1_000_000)
         player.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero)

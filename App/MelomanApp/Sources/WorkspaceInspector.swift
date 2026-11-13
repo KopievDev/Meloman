@@ -103,10 +103,6 @@ extension WorkspaceViewController {
             pronunciationScroll.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -18),
             pronunciationScroll.centerYAnchor.constraint(equalTo: tracks.arrangedSubviews[3].centerYAnchor),
             pronunciationScroll.heightAnchor.constraint(equalToConstant: 34),
-            waveformScroll.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 137),
-            waveformScroll.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -18),
-            waveformScroll.centerYAnchor.constraint(equalTo: tracks.arrangedSubviews[4].centerYAnchor),
-            waveformScroll.heightAnchor.constraint(equalToConstant: 34),
             statusLabel.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 18),
             statusLabel.trailingAnchor.constraint(lessThanOrEqualTo: progressPanel.leadingAnchor, constant: -12),
             statusLabel.bottomAnchor.constraint(equalTo: panel.bottomAnchor, constant: -14),
@@ -115,6 +111,7 @@ extension WorkspaceViewController {
             progressPanel.widthAnchor.constraint(equalToConstant: 390),
             progressPanel.heightAnchor.constraint(equalToConstant: 65),
         ])
+        layoutAudioWaveform(in: panel, scroll: waveformScroll, tracks: tracks)
         layoutTimelineZoom(in: panel, beside: heading)
         return panel
     }
