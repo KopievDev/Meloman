@@ -84,6 +84,7 @@ extension WorkspaceViewController {
             seekSlider.isEnabled = false
             inspectorInfo.stringValue = "Выберите файл в медиатеке"
             refreshKaraoke()
+            refreshAudioWaveform()
             updatePlaybackUI()
             return
         }
@@ -105,6 +106,7 @@ extension WorkspaceViewController {
         refreshBackgroundControls()
         refreshVisualOverlays()
         refreshKaraoke()
+        refreshAudioWaveform()
         updatePlaybackUI()
     }
 
@@ -178,6 +180,7 @@ extension WorkspaceViewController {
         preview.updateAnimatedGIF(at: safeTime)
         preview.updateVisualOverlays(at: safeTime)
         visualOverlayStrip.playhead = Timecode(microseconds: Int64((safeTime * 1_000_000).rounded())) ?? .zero
+        waveformStrip.playhead = visualOverlayStrip.playhead
         syncBackgroundVideo(to: safeTime)
     }
 

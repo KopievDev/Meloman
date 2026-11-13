@@ -70,12 +70,13 @@ extension WorkspaceViewController {
         let wordScroll = makeLyricTimelineScroll()
         let overlayScroll = makeGraphicTimelineScroll()
         let pronunciationScroll = makePronunciationTimelineScroll()
+        let waveformScroll = makeAudioWaveformScroll()
 
-        configureTimelineZoom([overlayScroll, wordScroll, pronunciationScroll])
+        configureTimelineZoom([overlayScroll, wordScroll, pronunciationScroll, waveformScroll])
         let progressPanel = makeAIProgressPanel()
         let timelineViews = [
             heading, timelineInfo, tracks, overlayScroll, wordScroll, pronunciationScroll,
-            timelineZoomSlider, timelineZoomLabel, statusLabel, progressPanel,
+            waveformScroll, timelineZoomSlider, timelineZoomLabel, statusLabel, progressPanel,
         ]
         for child in timelineViews {
             child.translatesAutoresizingMaskIntoConstraints = false
@@ -110,6 +111,7 @@ extension WorkspaceViewController {
             progressPanel.widthAnchor.constraint(equalToConstant: 390),
             progressPanel.heightAnchor.constraint(equalToConstant: 65),
         ])
+        layoutAudioWaveform(in: panel, scroll: waveformScroll, tracks: tracks)
         layoutTimelineZoom(in: panel, beside: heading)
         return panel
     }
@@ -153,6 +155,18 @@ extension WorkspaceViewController {
         configureLyricTimingGestures(for: pronunciationStrip)
         pronunciationStrip.toolTip = "K2 использует времена K1. Перетаскивание корректирует оба трека."
         scroll.documentView = pronunciationStrip
+        return scroll
+    }
+
+    private func makeAudioWaveformScroll() -> NSScrollView {
+        let scroll = NSScrollView()
+        scroll.hasHorizontalScroller = true
+        scroll.drawsBackground = false
+        waveformStrip.frame = NSRect(x: 0, y: 0, width: 660, height: 32)
+        waveformStrip.onSeek = { [weak self] time in
+            self?.seekFromWaveform(to: time)
+        }
+        scroll.documentView = waveformStrip
         return scroll
     }
 
