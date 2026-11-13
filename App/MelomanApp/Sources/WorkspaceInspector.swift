@@ -70,12 +70,13 @@ extension WorkspaceViewController {
         let wordScroll = makeLyricTimelineScroll()
         let overlayScroll = makeGraphicTimelineScroll()
         let pronunciationScroll = makePronunciationTimelineScroll()
+        let waveformScroll = makeAudioWaveformScroll()
 
-        configureTimelineZoom([overlayScroll, wordScroll, pronunciationScroll])
+        configureTimelineZoom([overlayScroll, wordScroll, pronunciationScroll, waveformScroll])
         let progressPanel = makeAIProgressPanel()
         let timelineViews = [
             heading, timelineInfo, tracks, overlayScroll, wordScroll, pronunciationScroll,
-            timelineZoomSlider, timelineZoomLabel, statusLabel, progressPanel,
+            waveformScroll, timelineZoomSlider, timelineZoomLabel, statusLabel, progressPanel,
         ]
         for child in timelineViews {
             child.translatesAutoresizingMaskIntoConstraints = false
@@ -102,6 +103,10 @@ extension WorkspaceViewController {
             pronunciationScroll.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -18),
             pronunciationScroll.centerYAnchor.constraint(equalTo: tracks.arrangedSubviews[3].centerYAnchor),
             pronunciationScroll.heightAnchor.constraint(equalToConstant: 34),
+            waveformScroll.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 137),
+            waveformScroll.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -18),
+            waveformScroll.centerYAnchor.constraint(equalTo: tracks.arrangedSubviews[4].centerYAnchor),
+            waveformScroll.heightAnchor.constraint(equalToConstant: 34),
             statusLabel.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 18),
             statusLabel.trailingAnchor.constraint(lessThanOrEqualTo: progressPanel.leadingAnchor, constant: -12),
             statusLabel.bottomAnchor.constraint(equalTo: panel.bottomAnchor, constant: -14),
@@ -153,6 +158,18 @@ extension WorkspaceViewController {
         configureLyricTimingGestures(for: pronunciationStrip)
         pronunciationStrip.toolTip = "K2 использует времена K1. Перетаскивание корректирует оба трека."
         scroll.documentView = pronunciationStrip
+        return scroll
+    }
+
+    private func makeAudioWaveformScroll() -> NSScrollView {
+        let scroll = NSScrollView()
+        scroll.hasHorizontalScroller = true
+        scroll.drawsBackground = false
+        waveformStrip.frame = NSRect(x: 0, y: 0, width: 660, height: 32)
+        waveformStrip.onSeek = { [weak self] time in
+            self?.seekFromWaveform(to: time)
+        }
+        scroll.documentView = waveformStrip
         return scroll
     }
 

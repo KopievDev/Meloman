@@ -77,6 +77,7 @@ extension WorkspaceViewController {
                 backgroundVideoURLs = loaded.backgroundVideoURLs
                 overlayURLs = loaded.overlayURLs
                 selectedOverlayID = nil
+                cachedWaveforms.removeAll()
                 projectURL = url
                 selectedMediaID = project.media.first?.id
                 refreshMediaList()

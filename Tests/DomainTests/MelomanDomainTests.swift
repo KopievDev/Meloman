@@ -253,7 +253,7 @@ final class MelomanDomainTests: XCTestCase {
         var waveform = AudioWaveform(duration: duration, binsPerSecond: 4)
         waveform.ingest(interleaved: [0.1, -0.8, 0.4, 0.2], channels: 2, at: 0, sampleRate: 4)
         waveform.ingest(interleaved: [0.7, 0.3, 0.2, 0.5], channels: 2, at: 0.5, sampleRate: 4)
-        XCTAssertEqual(waveform.peaks, [0.8, 0, 0.7, 0.5])
+        XCTAssertEqual(waveform.peaks, [0.8, 0.4, 0.7, 0.5])
     }
 
     func testWaveformPeaksIgnoreInvalidSamplesAndTimeBoundaries() throws {

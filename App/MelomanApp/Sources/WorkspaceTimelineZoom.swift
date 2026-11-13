@@ -47,6 +47,7 @@ extension WorkspaceViewController {
         visualOverlayStrip.setFrameSize(NSSize(
             width: timelineWidth(for: visualOverlayStrip.duration), height: 32
         ))
+        waveformStrip.setFrameSize(NSSize(width: timelineWidth(for: waveformStrip.duration), height: 32))
         let time = player.currentTime().seconds
         guard time.isFinite, time >= 0, let first = timelineScrollViews.first else { return }
         let targetX = max(0, CGFloat(time) * timelinePixelsPerSecond - first.contentView.bounds.width / 2)
